@@ -139,6 +139,7 @@ export default function Profile() {
 
     // Validate file type
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+      console.log('❌ Invalid file type:', file.type);
       toast({
         variant: 'destructive',
         title: 'Tipo de arquivo inválido',
@@ -147,15 +148,20 @@ export default function Profile() {
       return;
     }
 
-    // Validate file size (2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (3MB)
+    const maxSize = 3 * 1024 * 1024; // 3MB
+    if (file.size > maxSize) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      console.log(`❌ File too large: ${fileSizeMB}MB (max: 3MB)`);
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: 'O tamanho máximo é 2MB',
+        description: `Tamanho: ${fileSizeMB}MB. Máximo permitido: 3MB`,
       });
       return;
     }
+
+    console.log('✅ File validation passed');
 
     setIsUploadingAvatar(true);
     console.log('⏳ Starting upload...');
@@ -443,7 +449,7 @@ export default function Profile() {
                         Clique no ícone para alterar a foto
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        PNG, JPG ou JPEG (máx. 2MB)
+                        PNG, JPG ou JPEG (máx. 3MB)
                       </p>
                     </div>
                   </div>
