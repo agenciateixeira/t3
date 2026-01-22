@@ -269,6 +269,12 @@ export default function DealDetailModal({
     }
   };
 
+  const handleClose = () => {
+    // Chamar onUpdate para atualizar a lista de deals
+    if (onUpdate) onUpdate();
+    onClose();
+  };
+
   const handleSave = async (field: string, value: any) => {
     if (!dealId) return;
 
@@ -283,17 +289,70 @@ export default function DealDetailModal({
 
       if (error) throw error;
 
-      // Log activity
-      await supabase.from('deal_activities').insert([{
-        deal_id: dealId,
-        user_id: user?.id,
-        activity_type: 'field_update',
-        title: `Atualizou ${field}`,
-        metadata: { field, value },
-      }]);
+      // Personalizar mensagem de atividade baseada no campo
+      let activityTitle = '';
+      switch (field) {
+        case 'stage_id':
+          const stage = stages.find(s => s.id === value);
+          activityTitle = stage ? `Moveu para "${stage.name}"` : 'Alterou a etapa';
+          break;
+        case 'next_responsible_user':
+          const responsibleUser = profiles.find(p => p.id === value);
+          activityTitle = value
+            ? `Atribuiu para ${responsibleUser?.full_name || 'um profissional'}`
+            : 'Removeu o responsável';
+          break;
+        case 'next_responsible_sector':
+          activityTitle = value
+            ? `Atribuiu ao setor ${USER_HIERARCHY_LABELS[value as UserHierarchy] || value}`
+            : 'Removeu o setor responsável';
+          break;
+        case 'assignee_id':
+          const assignee = profiles.find(p => p.id === value);
+          activityTitle = assignee
+            ? `Atribuiu a oportunidade para ${assignee.full_name}`
+            : 'Removeu o responsável';
+          break;
+        case 'priority':
+          activityTitle = `Alterou a prioridade para ${TASK_PRIORITY_LABELS[value as TaskPriority]}`;
+          break;
+        case 'value':
+          activityTitle = `Alterou o valor para R$ ${parseFloat(value).toFixed(2)}`;
+          break;
+        case 'expected_close_date':
+          activityTitle = value
+            ? `Definiu a data de fechamento para ${new Date(value).toLocaleDateString('pt-BR')}`
+            : 'Removeu a data de fechamento';
+          break;
+        default:
+          activityTitle = `Atualizou ${field}`;
+      }
 
-      if (onUpdate) onUpdate();
-      await fetchDealDetails();
+      // Log activity and add to local state (evita fechar o dialog com re-fetch)
+      const { data: newActivity, error: activityError } = await supabase
+        .from('deal_activities')
+        .insert([{
+          deal_id: dealId,
+          user_id: user?.id,
+          activity_type: 'field_update',
+          title: activityTitle,
+          metadata: { field, value },
+        }])
+        .select('*, user:profiles(*)')
+        .single();
+
+      if (!activityError && newActivity) {
+        // Adicionar atividade localmente sem re-fetch
+        setActivities(prev => [newActivity, ...prev]);
+      }
+
+      // Atualizar o deal local
+      if (deal) {
+        setDeal({ ...deal, [field]: value });
+      }
+
+      // Chamar onUpdate apenas ao FECHAR o dialog
+      // if (onUpdate) onUpdate();
 
     } catch (error: any) {
       toast({
@@ -666,7 +725,7 @@ export default function DealDetailModal({
 
   if (isLoading) {
     return (
-      <Dialog open={open} onOpenChange={onClose}>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="max-w-6xl h-[90vh]">
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2db4af]"></div>
@@ -681,7 +740,7 @@ export default function DealDetailModal({
   const currentStage = stages.find(s => s.id === stageId);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-7xl h-[95vh] p-0 gap-0 overflow-hidden">
         {/* HEADER FIXO */}
         <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
@@ -733,7 +792,7 @@ export default function DealDetailModal({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button variant="ghost" size="sm" onClick={onClose}>
+              <Button variant="ghost" size="sm" onClick={handleClose}>
                 <X className="h-5 w-5" />
               </Button>
             </div>
