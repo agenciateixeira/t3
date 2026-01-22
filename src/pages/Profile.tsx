@@ -124,12 +124,18 @@ export default function Profile() {
   };
 
   const handleAvatarClick = () => {
+    console.log('🎯 Avatar clicked, opening file selector...');
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    console.log('📁 File selected:', file?.name, file?.type, file?.size);
+
+    if (!file || !user) {
+      console.log('❌ No file or no user');
+      return;
+    }
 
     // Validate file type
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
@@ -152,31 +158,41 @@ export default function Profile() {
     }
 
     setIsUploadingAvatar(true);
+    console.log('⏳ Starting upload...');
 
     try {
       // Delete old avatar if exists
       if (profileForm.avatar_url) {
         const oldPath = profileForm.avatar_url.split('/').slice(-2).join('/');
+        console.log('🗑️ Deleting old avatar:', oldPath);
         await supabase.storage.from('avatars').remove([oldPath]);
       }
 
       // Upload new avatar
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+      console.log('📤 Uploading to:', filePath);
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
         });
 
-      if (uploadError) throw uploadError;
+      console.log('📤 Upload result:', { data: uploadData, error: uploadError });
+
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
+
+      console.log('🔗 Public URL:', publicUrl);
 
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
@@ -187,7 +203,12 @@ export default function Profile() {
         })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Profile update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Profile updated successfully!');
 
       setProfileForm({ ...profileForm, avatar_url: publicUrl });
       await refreshProfile();
@@ -197,13 +218,15 @@ export default function Profile() {
         description: 'Sua foto de perfil foi alterada com sucesso.',
       });
     } catch (error: any) {
+      console.error('❌ Error in upload process:', error);
       toast({
         variant: 'destructive',
         title: 'Erro ao fazer upload',
-        description: error.message,
+        description: error.message || 'Verifique se o bucket "avatars" foi criado no Supabase',
       });
     } finally {
       setIsUploadingAvatar(false);
+      console.log('🏁 Upload process finished');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
