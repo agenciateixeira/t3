@@ -397,10 +397,10 @@ export default function Calendar() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      todo: 'bg-gray-100 text-gray-700 border-gray-300',
-      in_progress: 'bg-blue-100 text-blue-700 border-blue-300',
-      in_review: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-      done: 'bg-green-100 text-green-700 border-green-300',
+      todo: 'bg-gradient-to-br from-slate-500 to-slate-600 text-white border-slate-600 shadow-sm hover:shadow-md',
+      in_progress: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-600 shadow-sm hover:shadow-md',
+      in_review: 'bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-600 shadow-sm hover:shadow-md',
+      done: 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-600 shadow-sm hover:shadow-md',
     };
     return colors[status] || colors.todo;
   };
@@ -419,65 +419,150 @@ export default function Calendar() {
 
   return (
     <Layout>
-      <div className="p-4 lg:p-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Calendário</h1>
-          <p className="text-gray-600">Visualize e gerencie tarefas agendadas</p>
+      <div className="p-4 lg:p-8 max-w-[1800px] mx-auto">
+        {/* Header estilo Google Calendar */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-gradient-to-br from-[#2db4af] to-[#1d8f8a] rounded-xl flex items-center justify-center shadow-lg">
+              <CalendarIcon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Calendário</h1>
+              <p className="text-sm text-gray-600">Visualize e gerencie seus eventos</p>
+            </div>
+          </div>
+
+          {/* Botão Criar Evento destacado */}
+          <Button
+            onClick={() => setIsCreating(true)}
+            className="bg-gradient-to-r from-[#2db4af] to-[#1d8f8a] hover:from-[#28a39e] hover:to-[#197f7a] text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-6 text-base font-semibold"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Criar Evento
+          </Button>
         </div>
 
-        {/* Calendar Card */}
-        <Card>
-          <CardContent className="p-4 lg:p-6">
-            {/* View Mode Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div className="flex gap-2">
+        <div className="grid grid-cols-12 gap-6">
+          {/* Mini Calendário Lateral - estilo Google Calendar */}
+          <div className="col-span-12 lg:col-span-3">
+            <Card className="shadow-sm border-gray-200">
+              <CardContent className="p-4">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-[#2db4af]" />
+                    Mini Calendário
+                  </h3>
+                  <div className="text-sm">
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
+                        <div key={i} className="text-center text-xs font-medium text-gray-500 py-1">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {eachDayOfInterval({
+                        start: startOfWeek(startOfMonth(currentDate)),
+                        end: endOfWeek(endOfMonth(currentDate))
+                      }).map((day, i) => {
+                        const hasEvents = [...tasks, ...calendarEvents].some(item => {
+                          const itemDate = 'scheduled_date' in item ? item.scheduled_date : item.start_date;
+                          return itemDate && isSameDay(parseISO(itemDate), day);
+                        });
+
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setSelectedDate(day);
+                              setViewMode('day');
+                            }}
+                            className={`
+                              aspect-square rounded-full text-xs font-medium transition-all duration-200
+                              ${!isSameMonth(day, currentDate) ? 'text-gray-300' : 'text-gray-700'}
+                              ${isToday(day) ? 'bg-[#2db4af] text-white font-bold shadow-md' : ''}
+                              ${isSameDay(day, selectedDate || new Date()) && !isToday(day) ? 'bg-blue-100 text-blue-700' : ''}
+                              ${hasEvents && !isToday(day) && !isSameDay(day, selectedDate || new Date()) ? 'bg-purple-100 text-purple-700 font-semibold' : ''}
+                              ${!isToday(day) && !isSameDay(day, selectedDate || new Date()) && !hasEvents ? 'hover:bg-gray-100' : ''}
+                            `}
+                          >
+                            {format(day, 'd')}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legenda */}
+                <div className="pt-4 border-t space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="h-3 w-3 rounded-full bg-[#2db4af]"></div>
+                    <span className="text-gray-600">Hoje</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="h-3 w-3 rounded-full bg-purple-100 border border-purple-300"></div>
+                    <span className="text-gray-600">Com eventos</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Calendário Principal */}
+          <div className="col-span-12 lg:col-span-9">
+            <Card className="shadow-sm border-gray-200">
+              <CardContent className="p-4 lg:p-6">
+                {/* View Mode Buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                  <div className="flex gap-2">
                 <Button
                   variant={viewMode === 'today' ? 'default' : 'outline'}
                   onClick={() => {
                     setCurrentDate(new Date(2026, 0, 15));
                     setViewMode('today');
                   }}
-                  className={viewMode === 'today' ? 'bg-[#2db4af] hover:bg-[#28a39e]' : ''}
+                  className={`transition-all duration-200 ${viewMode === 'today' ? 'bg-[#2db4af] hover:bg-[#28a39e] shadow-md' : 'hover:bg-gray-50'}`}
                 >
+                  <Clock className="h-4 w-4 mr-2" />
                   Hoje
                 </Button>
                 <Button
                   variant={viewMode === 'week' ? 'default' : 'outline'}
                   onClick={() => setViewMode('week')}
-                  className={viewMode === 'week' ? 'bg-[#2db4af] hover:bg-[#28a39e]' : ''}
+                  className={`transition-all duration-200 ${viewMode === 'week' ? 'bg-[#2db4af] hover:bg-[#28a39e] shadow-md' : 'hover:bg-gray-50'}`}
                 >
-                  7 Dias
+                  Semana
                 </Button>
                 <Button
                   variant={viewMode === 'month' ? 'default' : 'outline'}
                   onClick={() => setViewMode('month')}
-                  className={viewMode === 'month' ? 'bg-[#2db4af] hover:bg-[#28a39e]' : ''}
+                  className={`transition-all duration-200 ${viewMode === 'month' ? 'bg-[#2db4af] hover:bg-[#28a39e] shadow-md' : 'hover:bg-gray-50'}`}
                 >
-                  30 Dias
+                  Mês
                 </Button>
               </div>
 
               {viewMode === 'month' && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                    className="h-9 w-9"
+                    className="h-10 w-10 hover:bg-[#2db4af]/10 hover:border-[#2db4af] transition-all duration-200"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-5 w-5 text-gray-600" />
                   </Button>
-                  <h2 className="text-xl font-bold text-gray-900 min-w-[200px] text-center">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent min-w-[220px] text-center capitalize">
                     {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
                   </h2>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                    className="h-9 w-9"
+                    className="h-10 w-10 hover:bg-[#2db4af]/10 hover:border-[#2db4af] transition-all duration-200"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-5 w-5 text-gray-600" />
                   </Button>
                 </div>
               )}
@@ -543,24 +628,24 @@ export default function Calendar() {
                       <div
                         key={index}
                         onClick={() => handleDateClick(day)}
-                        className={`min-h-[120px] p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+                        className={`min-h-[120px] p-2 border-r border-b border-gray-200 cursor-pointer transition-all duration-200 ${
                           index % 7 === 6 ? 'border-r-0' : ''
                         } ${index >= calendarDays.length - 7 ? 'border-b-0' : ''} ${
-                          isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                        } ${isDayToday ? 'bg-blue-50' : ''}`}
+                          isCurrentMonth ? 'bg-white hover:bg-[#f8fffe]' : 'bg-gray-50 hover:bg-gray-100'
+                        } ${isDayToday ? 'bg-blue-50 hover:bg-blue-100/50 ring-2 ring-[#2db4af]/30 ring-inset' : ''}`}
                       >
                         <div
-                          className={`text-sm font-medium mb-2 ${
+                          className={`text-sm font-medium mb-2 transition-all duration-200 ${
                             isDayToday
-                              ? 'text-white bg-[#2db4af] rounded-full h-6 w-6 flex items-center justify-center'
+                              ? 'text-white bg-[#2db4af] rounded-full h-7 w-7 flex items-center justify-center shadow-md hover:shadow-lg'
                               : isCurrentMonth
-                              ? 'text-gray-900'
+                              ? 'text-gray-900 hover:text-[#2db4af]'
                               : 'text-gray-400'
                           }`}
                         >
                           {format(day, 'd')}
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {/* Eventos de Calendário (Deals do Pipeline) */}
                           {dayEvents.slice(0, 2).map((event) => (
                             <div
@@ -569,11 +654,12 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleEventClick(event);
                               }}
-                              className="text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition-opacity bg-purple-100 border border-purple-300 text-purple-900"
+                              className="text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-200 text-purple-900 hover:shadow-md hover:scale-[1.02] hover:border-purple-300"
                             >
-                              <div className="font-medium truncate">{event.title}</div>
+                              <div className="font-semibold truncate">{event.title}</div>
                               {event.start_date && (
-                                <div className="text-[10px] opacity-75">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 text-purple-700">
+                                  <Clock className="h-2.5 w-2.5" />
                                   {format(parseISO(event.start_date), 'HH:mm')}
                                 </div>
                               )}
@@ -588,20 +674,21 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleTaskClick(task);
                               }}
-                              className={`text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 transition-opacity border ${getStatusColor(
+                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 border hover:scale-[1.02] ${getStatusColor(
                                 task.status
                               )}`}
                             >
-                              <div className="font-medium truncate">{task.title}</div>
+                              <div className="font-semibold truncate">{task.title}</div>
                               {task.scheduled_time && (
-                                <div className="text-[10px] opacity-75">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-90">
+                                  <Clock className="h-2.5 w-2.5" />
                                   {task.scheduled_time.substring(0, 5)}
                                 </div>
                               )}
                             </div>
                           ))}
                           {totalItems > 3 && (
-                            <div className="text-xs text-gray-500 pl-2">
+                            <div className="text-xs text-gray-500 pl-2 font-medium hover:text-[#2db4af] transition-colors duration-200">
                               +{totalItems - 3} mais
                             </div>
                           )}
@@ -639,13 +726,38 @@ export default function Calendar() {
                   {Array.from({ length: 7 }).map((_, i) => {
                     const day = addDays(currentDate, i);
                     const dayTasks = getTasksForDay(day);
+                    const dayEvents = getEventsForDay(day);
+                    const isDayToday = isToday(day);
                     return (
                       <div
                         key={i}
                         onClick={() => handleDateClick(day)}
-                        className="min-h-[300px] p-2 border-r border-gray-200 last:border-r-0 cursor-pointer hover:bg-gray-50"
+                        className={`min-h-[300px] p-2 border-r border-gray-200 last:border-r-0 cursor-pointer transition-all duration-200 ${
+                          isDayToday ? 'bg-blue-50 hover:bg-blue-100/50' : 'hover:bg-[#f8fffe]'
+                        }`}
                       >
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
+                          {/* Eventos de Calendário */}
+                          {dayEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEventClick(event);
+                              }}
+                              className="text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-200 text-purple-900 hover:shadow-md hover:scale-[1.02]"
+                            >
+                              <div className="font-semibold truncate">{event.title}</div>
+                              {event.start_date && (
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 text-purple-700">
+                                  <Clock className="h-2.5 w-2.5" />
+                                  {format(parseISO(event.start_date), 'HH:mm')}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* Tarefas */}
                           {dayTasks.map((task) => (
                             <div
                               key={task.id}
@@ -653,13 +765,14 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleTaskClick(task);
                               }}
-                              className={`text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 border ${getStatusColor(
+                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 border hover:scale-[1.02] ${getStatusColor(
                                 task.status
                               )}`}
                             >
-                              <div className="font-medium truncate">{task.title}</div>
+                              <div className="font-semibold truncate">{task.title}</div>
                               {task.scheduled_time && (
-                                <div className="text-[10px] opacity-75">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-90">
+                                  <Clock className="h-2.5 w-2.5" />
                                   {task.scheduled_time.substring(0, 5)}
                                 </div>
                               )}
@@ -673,31 +786,38 @@ export default function Calendar() {
               </div>
             ) : (
               // Today/Day view - Timeline
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                 <div className="max-h-[600px] overflow-y-auto">
                   {hours.map((hour) => {
                     const hourTasks = getTasksForHour(hour);
                     const hourEvents = getEventsForHour(hour);
                     const hourStr = hour.toString().padStart(2, '0');
                     const hasItems = hourTasks.length > 0 || hourEvents.length > 0;
+                    const isCurrentHour = new Date().getHours() === hour && isToday(viewMode === 'day' && selectedDate ? selectedDate : currentDate);
 
                     return (
                       <div
                         key={hour}
                         onClick={() => handleHourClick(hour)}
-                        className="flex border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                        className={`flex border-b border-gray-200 cursor-pointer transition-all duration-200 ${
+                          isCurrentHour
+                            ? 'bg-[#2db4af]/5 hover:bg-[#2db4af]/10 border-l-4 border-l-[#2db4af]'
+                            : 'hover:bg-[#f8fffe]'
+                        }`}
                       >
-                        <div className="w-20 flex-shrink-0 p-3 bg-gray-50 border-r border-gray-200 text-sm font-medium text-gray-600">
+                        <div className={`w-20 flex-shrink-0 p-3 border-r border-gray-200 text-sm font-medium transition-colors duration-200 ${
+                          isCurrentHour ? 'bg-[#2db4af]/10 text-[#2db4af] font-bold' : 'bg-gray-50 text-gray-600'
+                        }`}>
                           {hourStr}:00
                         </div>
-                        <div className="flex-1 p-2 min-h-[60px]">
+                        <div className="flex-1 p-3 min-h-[70px]">
                           {!hasItems ? (
-                            <div className="text-xs text-gray-400 flex items-center h-full">
-                              <Plus className="h-3 w-3 mr-1" />
-                              Clique para agendar
+                            <div className="text-xs text-gray-400 flex items-center h-full group">
+                              <Plus className="h-3.5 w-3.5 mr-1.5 group-hover:text-[#2db4af] transition-colors duration-200" />
+                              <span className="group-hover:text-[#2db4af] transition-colors duration-200">Clique para agendar</span>
                             </div>
                           ) : (
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                               {/* Eventos de Calendário (Deals do Pipeline) */}
                               {hourEvents.map((event) => (
                                 <div
@@ -706,16 +826,21 @@ export default function Calendar() {
                                     e.stopPropagation();
                                     handleEventClick(event);
                                   }}
-                                  className="px-3 py-2 rounded border bg-purple-100 border-purple-300 text-purple-900"
+                                  className="px-3 py-2.5 rounded-lg border bg-gradient-to-r from-purple-100 to-purple-50 border-purple-200 text-purple-900 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.01] hover:border-purple-300"
                                 >
-                                  <div className="font-medium text-sm">{event.title}</div>
-                                  <div className="text-xs opacity-75 mt-1">
+                                  <div className="font-semibold text-sm flex items-center gap-2">
+                                    <CalendarIcon className="h-3.5 w-3.5 text-purple-600" />
+                                    {event.title}
+                                  </div>
+                                  <div className="text-xs text-purple-700 mt-1.5 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
                                     {event.start_date && format(parseISO(event.start_date), 'HH:mm')}
                                     {event.end_date && ` - ${format(parseISO(event.end_date), 'HH:mm')}`}
                                   </div>
                                   {event.client && (
-                                    <div className="text-xs opacity-75 mt-1">
-                                      📊 {event.client.name}
+                                    <div className="text-xs text-purple-700 mt-1 flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      {event.client.name}
                                     </div>
                                   )}
                                 </div>
@@ -729,17 +854,19 @@ export default function Calendar() {
                                     e.stopPropagation();
                                     handleTaskClick(task);
                                   }}
-                                  className={`px-3 py-2 rounded border ${getStatusColor(
+                                  className={`px-3 py-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.01] ${getStatusColor(
                                     task.status
                                   )}`}
                                 >
-                                  <div className="font-medium text-sm">{task.title}</div>
-                                  <div className="text-xs opacity-75 mt-1">
+                                  <div className="font-semibold text-sm">{task.title}</div>
+                                  <div className="text-xs mt-1.5 flex items-center gap-1 opacity-90">
+                                    <Clock className="h-3 w-3" />
                                     {task.scheduled_time?.substring(0, 5)}
                                     {task.end_time && ` - ${task.end_time.substring(0, 5)}`}
                                   </div>
                                   {task.client && (
-                                    <div className="text-xs opacity-75 mt-1">
+                                    <div className="text-xs mt-1 flex items-center gap-1 opacity-90">
+                                      <User className="h-3 w-3" />
                                       {task.client.name}
                                     </div>
                                   )}
@@ -756,6 +883,8 @@ export default function Calendar() {
             )}
           </CardContent>
         </Card>
+          </div>
+        </div>
 
         {/* Task Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
