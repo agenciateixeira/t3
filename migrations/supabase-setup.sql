@@ -131,7 +131,7 @@ CREATE TRIGGER set_projects_updated_at
 -- INSTRUÇÕES DE USO
 -- ============================================
 -- 1. Acesse o Supabase Dashboard: https://supabase.com/dashboard
--- 2. Selecione seu projeto: hukbilmyblqlomoaiszm
+-- 2. Selecione seu projeto no dashboard
 -- 3. Vá em "SQL Editor" no menu lateral
 -- 4. Copie e cole este arquivo completo
 -- 5. Clique em "Run" para executar
