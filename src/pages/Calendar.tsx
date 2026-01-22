@@ -445,25 +445,25 @@ export default function Calendar() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-4">
           {/* Mini Calendário Lateral - estilo Google Calendar */}
-          <div className="col-span-12 lg:col-span-3">
+          <div className="col-span-12 lg:col-span-2">
             <Card className="shadow-sm border-gray-200">
-              <CardContent className="p-4">
-                <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4 text-[#2db4af]" />
-                    Mini Calendário
+              <CardContent className="p-3">
+                <div className="mb-3">
+                  <h3 className="font-semibold text-sm text-gray-900 mb-2 flex items-center gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5 text-[#2db4af]" />
+                    {format(currentDate, 'MMMM', { locale: ptBR })}
                   </h3>
                   <div className="text-sm">
-                    <div className="grid grid-cols-7 gap-1 mb-2">
+                    <div className="grid grid-cols-7 gap-0.5 mb-1">
                       {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
-                        <div key={i} className="text-center text-xs font-medium text-gray-500 py-1">
+                        <div key={i} className="text-center text-[10px] font-medium text-gray-500 py-0.5">
                           {day}
                         </div>
                       ))}
                     </div>
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-0.5">
                       {eachDayOfInterval({
                         start: startOfWeek(startOfMonth(currentDate)),
                         end: endOfWeek(endOfMonth(currentDate))
@@ -481,9 +481,9 @@ export default function Calendar() {
                               setViewMode('day');
                             }}
                             className={`
-                              aspect-square rounded-full text-xs font-medium transition-all duration-200
+                              aspect-square rounded-full text-[11px] font-medium transition-all duration-200
                               ${!isSameMonth(day, currentDate) ? 'text-gray-300' : 'text-gray-700'}
-                              ${isToday(day) ? 'bg-[#2db4af] text-white font-bold shadow-md' : ''}
+                              ${isToday(day) ? 'bg-[#2db4af] text-white font-bold shadow-sm' : ''}
                               ${isSameDay(day, selectedDate || new Date()) && !isToday(day) ? 'bg-blue-100 text-blue-700' : ''}
                               ${hasEvents && !isToday(day) && !isSameDay(day, selectedDate || new Date()) ? 'bg-purple-100 text-purple-700 font-semibold' : ''}
                               ${!isToday(day) && !isSameDay(day, selectedDate || new Date()) && !hasEvents ? 'hover:bg-gray-100' : ''}
@@ -498,13 +498,13 @@ export default function Calendar() {
                 </div>
 
                 {/* Legenda */}
-                <div className="pt-4 border-t space-y-2">
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="h-3 w-3 rounded-full bg-[#2db4af]"></div>
+                <div className="pt-3 border-t space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#2db4af]"></div>
                     <span className="text-gray-600">Hoje</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <div className="h-3 w-3 rounded-full bg-purple-100 border border-purple-300"></div>
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <div className="h-2.5 w-2.5 rounded-full bg-purple-100 border border-purple-300"></div>
                     <span className="text-gray-600">Com eventos</span>
                   </div>
                 </div>
@@ -513,7 +513,7 @@ export default function Calendar() {
           </div>
 
           {/* Calendário Principal */}
-          <div className="col-span-12 lg:col-span-9">
+          <div className="col-span-12 lg:col-span-10">
             <Card className="shadow-sm border-gray-200">
               <CardContent className="p-4 lg:p-6">
                 {/* View Mode Buttons */}
