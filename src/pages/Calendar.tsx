@@ -434,7 +434,10 @@ export default function Calendar() {
 
           {/* Botão Criar Evento destacado */}
           <Button
-            onClick={() => setIsCreating(true)}
+            onClick={() => {
+              setIsCreating(true);
+              setIsDialogOpen(true);
+            }}
             className="bg-gradient-to-r from-[#2db4af] to-[#1d8f8a] hover:from-[#28a39e] hover:to-[#197f7a] text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-6 text-base font-semibold"
           >
             <Plus className="h-5 w-5 mr-2" />
