@@ -369,16 +369,29 @@ export default function DealDetailModal({
     if (!dealId || !newChecklistTitle.trim()) return;
 
     try {
-      const { error } = await supabase.from('deal_checklists').insert([{
-        deal_id: dealId,
-        title: newChecklistTitle,
-        position: checklists.length,
-      }]);
+      const { data: newChecklist, error } = await supabase
+        .from('deal_checklists')
+        .insert([{
+          deal_id: dealId,
+          title: newChecklistTitle,
+          position: checklists.length,
+        }])
+        .select('*')
+        .single();
 
       if (error) throw error;
 
       setNewChecklistTitle('');
-      await fetchDealDetails();
+
+      // Adicionar checklist localmente
+      if (newChecklist) {
+        setChecklists(prev => [...prev, { ...newChecklist, items: [] }]);
+      }
+
+      toast({
+        title: 'Checklist criada!',
+        description: 'Nova checklist adicionada com sucesso.',
+      });
 
     } catch (error: any) {
       toast({
@@ -444,14 +457,18 @@ export default function DealDetailModal({
     if (!dealId || !commentText.trim()) return;
 
     try {
-      const { error } = await supabase.from('deal_activities').insert([{
-        deal_id: dealId,
-        user_id: user?.id,
-        activity_type: 'note',
-        title: replyToId ? 'Respondeu' : 'Adicionou um comentário',
-        description: commentText,
-        reply_to: replyToId || null,
-      }]);
+      const { data: newActivity, error } = await supabase
+        .from('deal_activities')
+        .insert([{
+          deal_id: dealId,
+          user_id: user?.id,
+          activity_type: 'note',
+          title: replyToId ? 'Respondeu' : 'Adicionou um comentário',
+          description: commentText,
+          reply_to: replyToId || null,
+        }])
+        .select('*, user:profiles(*)')
+        .single();
 
       if (error) throw error;
 
@@ -462,9 +479,32 @@ export default function DealDetailModal({
         setNewComment('');
       }
 
-      await fetchDealDetails();
+      // Adicionar comentário localmente
+      if (newActivity) {
+        if (replyToId) {
+          // Se é uma resposta, adicionar à lista de respostas da atividade pai
+          setActivities(prev => prev.map(act => {
+            if (act.id === replyToId) {
+              return {
+                ...act,
+                replies: [...(act.replies || []), newActivity]
+              };
+            }
+            return act;
+          }));
+        } else {
+          // Se é um comentário novo, adicionar ao topo
+          setActivities(prev => [newActivity, ...prev]);
+        }
+      }
+
+      toast({
+        title: replyToId ? 'Resposta adicionada!' : 'Comentário adicionado!',
+        description: 'Seu comentário foi publicado com sucesso.',
+      });
 
     } catch (error: any) {
+      console.error('Erro ao adicionar comentário:', error);
       toast({
         variant: 'destructive',
         title: 'Erro ao adicionar comentário',
