@@ -21,6 +21,7 @@ import {
   Plus,
   Mail,
   ShieldAlert,
+  Workflow,
 } from 'lucide-react';
 import {
   Select,
