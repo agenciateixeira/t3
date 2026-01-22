@@ -103,11 +103,12 @@ export default function Profile() {
         .from('user_preferences')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
+      // Ignore "not found" errors - use defaults
       if (error && error.code !== 'PGRST116') {
-        // Record not found is OK, we'll use defaults
-        if (error.code !== 'PGRST116') throw error;
+        console.error('Error fetching preferences:', error);
+        return;
       }
 
       if (data) {
