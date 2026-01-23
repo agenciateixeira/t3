@@ -173,11 +173,10 @@ export default function Layout({ children }: LayoutProps) {
         style={{
           bottom: 0,
           zIndex: 9999,
-          height: 'calc(64px + env(safe-area-inset-bottom))',
           paddingBottom: 'env(safe-area-inset-bottom)'
         }}
       >
-        <div className="flex items-center justify-around h-16 px-1">
+        <div className="flex items-center justify-around h-16 px-1" style={{ touchAction: 'manipulation' }}>
           {/* 4 main items */}
           {mobileMainItems.map((item) => {
             const Icon = item.icon;

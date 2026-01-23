@@ -132,6 +132,7 @@
 @layer base {
   * {
     @apply border-border;
+    touch-action: manipulation;
   }
 
   html {
@@ -149,6 +150,7 @@
     overflow-x: hidden;
     height: 100%;
     max-width: 100vw;
+    -webkit-tap-highlight-color: transparent;
   }
 
   #root {
@@ -156,6 +158,11 @@
     overflow-y: visible;
     overflow-x: hidden;
     max-width: 100vw;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
 

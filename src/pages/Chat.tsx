@@ -917,14 +917,16 @@ export default function Chat() {
   return (
     <Layout>
       <div
-        className="lg:static lg:h-[calc(100vh-32px)] flex overflow-x-hidden bg-white fixed inset-0 lg:inset-auto"
+        className="lg:static lg:h-[calc(100vh-32px)] flex bg-white fixed inset-0 lg:inset-auto"
         style={{
           top: 'env(safe-area-inset-top)',
-          bottom: 'calc(64px + env(safe-area-inset-bottom))'
+          bottom: 'calc(64px + env(safe-area-inset-bottom))',
+          overflowX: 'hidden',
+          overflowY: 'hidden'
         }}
       >
         {/* Conversations List */}
-        <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white`}>
+        <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white overflow-hidden`}>
           {/* Header fixo */}
           <div className="px-4 py-3 bg-[#f0f2f5] flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
@@ -936,11 +938,12 @@ export default function Chat() {
                     size="icon"
                     variant="ghost"
                     className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0"
+                    style={{ touchAction: 'manipulation' }}
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="end" className="z-[10000]">
+                <DropdownMenuContent side="bottom" align="end" className="z-[10000]" style={{ touchAction: 'manipulation' }}>
                   <DropdownMenuItem onClick={() => setIsNewConversationOpen(true)}>
                     <User className="h-4 w-4 mr-2" />
                     Nova conversa
@@ -1136,6 +1139,7 @@ export default function Chat() {
                       size="icon"
                       onClick={() => setSelectedConversation(null)}
                       className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0"
+                      style={{ touchAction: 'manipulation' }}
                     >
                       <ChevronLeft className="h-6 w-6" />
                     </Button>
@@ -1171,11 +1175,16 @@ export default function Chat() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-gray-600 hover:bg-white/50">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-gray-600 hover:bg-white/50 flex-shrink-0"
+                        style={{ touchAction: 'manipulation' }}
+                      >
                         <MoreVertical className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="z-[10000]" style={{ touchAction: 'manipulation' }}>
                       <DropdownMenuItem
                         className="text-red-600 focus:text-red-600"
                         onClick={() => setConversationToDelete(selectedConversation)}
