@@ -916,15 +916,7 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div
-        className="lg:static lg:h-[calc(100vh-32px)] flex bg-white fixed inset-0 lg:inset-auto"
-        style={{
-          top: 'env(safe-area-inset-top)',
-          bottom: 'calc(64px + env(safe-area-inset-bottom))',
-          overflowX: 'hidden',
-          overflowY: 'hidden'
-        }}
-      >
+      <div className="h-[calc(100dvh-64px)] lg:h-[calc(100vh-2rem)] flex bg-white overflow-hidden">
         {/* Conversations List */}
         <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white overflow-hidden`}>
           {/* Header fixo */}
@@ -932,16 +924,21 @@ export default function Chat() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-gray-900">Conversas</h2>
 
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0 inline-flex items-center justify-center"
-                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                    onTouchStart={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.8)'}
-                    onTouchEnd={(e) => e.currentTarget.style.backgroundColor = ''}
+                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0 inline-flex items-center justify-center relative"
+                    style={{
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none',
+                      cursor: 'pointer',
+                      zIndex: 1000
+                    }}
                   >
-                    <Plus className="h-5 w-5" />
+                    <Plus className="h-5 w-5 pointer-events-none" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="bottom" align="end" className="z-[10000]">
@@ -1138,12 +1135,17 @@ export default function Chat() {
                     <button
                       type="button"
                       onClick={() => setSelectedConversation(null)}
-                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md"
-                      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                      onTouchStart={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)'}
-                      onTouchEnd={(e) => e.currentTarget.style.backgroundColor = ''}
+                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md relative"
+                      style={{
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none',
+                        cursor: 'pointer',
+                        zIndex: 1000
+                      }}
                     >
-                      <ChevronLeft className="h-6 w-6" />
+                      <ChevronLeft className="h-6 w-6 pointer-events-none" />
                     </button>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedConversation.avatar_url || undefined} />
@@ -1175,16 +1177,21 @@ export default function Chat() {
                     </div>
                   </div>
 
-                  <DropdownMenu>
+                  <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md"
-                        style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                        onTouchStart={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)'}
-                        onTouchEnd={(e) => e.currentTarget.style.backgroundColor = ''}
+                        className="text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md relative"
+                        style={{
+                          touchAction: 'manipulation',
+                          WebkitTapHighlightColor: 'transparent',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none',
+                          cursor: 'pointer',
+                          zIndex: 1000
+                        }}
                       >
-                        <MoreVertical className="h-5 w-5" />
+                        <MoreVertical className="h-5 w-5 pointer-events-none" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="z-[10000]">
