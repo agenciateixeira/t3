@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,6 +11,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
   LayoutDashboard,
   Users,
   CheckSquare,
@@ -22,6 +29,7 @@ import {
   Wrench,
   MessageCircle,
   Clock,
+  Menu,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -32,6 +40,7 @@ export default function Layout({ children }: LayoutProps) {
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -55,6 +64,19 @@ export default function Layout({ children }: LayoutProps) {
       ? [{ name: 'Timers Ativos', href: '/active-timers', icon: Clock }]
       : []),
   ];
+
+  // Items principais para barra inferior mobile (2 + logo + 1 = 4 itens visíveis)
+  // Logo central já funciona como Dashboard
+  const mobileMainItems = [
+    { name: 'Clientes', href: '/clients', icon: Briefcase },
+    { name: 'Tarefas', href: '/tasks', icon: CheckSquare },
+    { name: 'Chat', href: '/chat', icon: MessageCircle },
+  ];
+
+  // Items secundários para o menu hamburger (todos os outros exceto os principais)
+  const mobileSecondaryItems = navigation.filter(
+    item => !mobileMainItems.some(main => main.href === item.href) && item.href !== '/dashboard'
+  );
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -148,63 +170,161 @@ export default function Layout({ children }: LayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Page content */}
-        <main className="min-h-screen pb-32 lg:pb-0">{children}</main>
+        <main className="min-h-screen pb-24 lg:pb-0">{children}</main>
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl" style={{ zIndex: 9999 }}>
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg"
+        style={{
+          zIndex: 9999,
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}
+      >
         <div className="relative">
           {/* Logo button in center - overlapping */}
           <Link
             to="/dashboard"
-            className="absolute left-1/2 -translate-x-1/2 -top-12 bg-[#2db4af] rounded-full p-4 shadow-2xl hover:bg-[#28a39e] transition-all"
+            className="absolute left-1/2 -translate-x-1/2 -top-10 bg-[#2db4af] rounded-full p-3 shadow-2xl hover:bg-[#28a39e] transition-all active:scale-95"
             style={{ zIndex: 10000 }}
           >
             <img
               src="/logo-sidebar.png"
               alt="Dashboard"
-              className="h-16 w-16 object-contain"
+              className="h-14 w-14 object-contain"
             />
           </Link>
 
-          {/* Navigation items */}
-          <div className="flex items-center justify-around h-20 px-2">
-            {navigation.slice(0, 2).map((item) => {
+          {/* Navigation items - 5 items total: 2 + logo + 1 + hamburger */}
+          <div className="flex items-center justify-around h-16 px-1">
+            {/* Left 2 items: Clientes, Tarefas */}
+            {mobileMainItems.slice(0, 2).map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[60px] ${
+                  className={`flex flex-col items-center justify-center gap-1 px-2 py-1 min-w-[70px] transition-colors ${
                     active ? 'text-[#2db4af]' : 'text-gray-600'
                   }`}
                 >
                   <Icon className="h-6 w-6" />
-                  <span className="text-[10px] font-medium">{item.name}</span>
+                  <span className="text-[10px] font-medium truncate max-w-full">{item.name}</span>
                 </Link>
               );
             })}
 
-            {/* Spacer for center logo */}
-            <div className="w-20"></div>
+            {/* Center spacer for logo */}
+            <div className="w-16 flex-shrink-0"></div>
 
-            {navigation.slice(2).map((item) => {
+            {/* Right 1 item: Chat */}
+            {mobileMainItems.slice(2, 3).map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[60px] ${
+                  className={`flex flex-col items-center justify-center gap-1 px-2 py-1 min-w-[70px] transition-colors ${
                     active ? 'text-[#2db4af]' : 'text-gray-600'
                   }`}
                 >
                   <Icon className="h-6 w-6" />
-                  <span className="text-[10px] font-medium">{item.name}</span>
+                  <span className="text-[10px] font-medium truncate max-w-full">{item.name}</span>
                 </Link>
               );
             })}
+
+            {/* Hamburger menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-1 text-gray-600 min-w-[70px] transition-colors active:text-[#2db4af]"
+                  aria-label="Menu"
+                >
+                  <Menu className="h-6 w-6" />
+                  <span className="text-[10px] font-medium">Menu</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] sm:w-[340px]">
+                <SheetHeader className="mb-6">
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+
+                <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-120px)]">
+                  {mobileSecondaryItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                          active
+                            ? 'bg-[#2db4af] text-white'
+                            : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 my-4"></div>
+
+                  {/* User section */}
+                  <div className="px-4 py-3">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.avatar_url} />
+                        <AvatarFallback className="bg-[#2db4af] text-white text-sm">
+                          {getInitials(profile?.full_name || user?.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {profile?.full_name || 'Usuário'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Link
+                        to="/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                      >
+                        <UserCircle className="h-5 w-5" />
+                        Perfil
+                      </Link>
+                      <Link
+                        to="/settings"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                      >
+                        <Settings className="h-5 w-5" />
+                        Configurações
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors w-full text-left"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        Sair
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </nav>

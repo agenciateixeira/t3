@@ -27,6 +27,7 @@ import {
   MoreVertical,
   Trash2,
   Archive,
+  ChevronLeft,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -915,9 +916,9 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-80px)] lg:h-[calc(100vh-32px)] flex">
+      <div className="h-[calc(100vh-140px)] lg:h-[calc(100vh-32px)] flex">
         {/* Conversations List */}
-        <div className="w-full lg:w-80 border-r border-gray-300 flex flex-col bg-white">
+        <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white`}>
           <div className="px-4 py-3 bg-[#f0f2f5]">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-gray-900">Conversas</h2>
@@ -1116,12 +1117,21 @@ export default function Chat() {
 
         {/* Messages Area */}
         {selectedConversation ? (
-          <div className="flex-1 flex flex-col">
+          <div className={`${!selectedConversation ? 'hidden lg:flex' : 'flex'} flex-1 flex-col`}>
             {/* Chat Header */}
             <div className="bg-[#f0f2f5] border-b border-gray-300">
               <div className="px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {/* Back button - Mobile only */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedConversation(null)}
+                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedConversation.avatar_url || undefined} />
                       <AvatarFallback className="bg-[#2db4af] text-white">
@@ -1401,7 +1411,7 @@ export default function Chat() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5] border-b-4 border-[#25d366]">
+          <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-[#f0f2f5] border-b-4 border-[#25d366]">
             <div className="text-center text-gray-600 max-w-md px-8">
               <div className="mb-6 relative">
                 <div className="w-80 h-80 mx-auto rounded-full bg-white/40 flex items-center justify-center">
