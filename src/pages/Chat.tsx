@@ -916,7 +916,10 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="h-[calc(100dvh-64px)] lg:h-[calc(100vh-2rem)] flex bg-white" style={{ overflow: 'hidden' }}>
+      <div
+        className="h-[calc(100dvh-64px)] lg:h-screen flex bg-white lg:fixed lg:inset-0 lg:left-64"
+        style={{ overflow: 'hidden' }}
+      >
         {/* Conversations List */}
         <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 lg:flex-shrink-0 border-r border-gray-300 flex-col bg-white`} style={{ overflow: 'hidden' }}>
           {/* Header fixo */}
