@@ -916,9 +916,9 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="h-[calc(100dvh-64px)] lg:h-[calc(100vh-2rem)] flex bg-white overflow-hidden">
+      <div className="h-[calc(100dvh-64px)] lg:h-[calc(100vh-2rem)] flex bg-white" style={{ overflow: 'hidden' }}>
         {/* Conversations List */}
-        <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white overflow-hidden`}>
+        <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 lg:flex-shrink-0 border-r border-gray-300 flex-col bg-white`} style={{ overflow: 'hidden' }}>
           {/* Header fixo */}
           <div className="px-4 py-3 bg-[#f0f2f5] flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
@@ -1125,7 +1125,7 @@ export default function Chat() {
 
         {/* Messages Area */}
         {selectedConversation ? (
-          <div className={`${!selectedConversation ? 'hidden lg:flex' : 'flex'} flex-1 flex-col relative overflow-hidden`}>
+          <div className={`${!selectedConversation ? 'hidden lg:flex' : 'flex'} flex-1 flex-col`} style={{ overflow: 'hidden', minWidth: 0 }}>
             {/* Chat Header - Fixed */}
             <div className="bg-[#f0f2f5] border-b border-gray-300 flex-shrink-0">
               <div className="px-4 py-3">
@@ -1231,10 +1231,12 @@ export default function Chat() {
 
             {/* Messages - Scrollable */}
             <div
-              className="flex-1 overflow-y-auto p-4 space-y-2"
+              className="flex-1 p-4 space-y-2"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d9d9d9' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                backgroundColor: '#efeae2'
+                backgroundColor: '#efeae2',
+                overflowY: 'auto',
+                overflowX: 'hidden'
               }}
             >
               {isLoadingMessages ? (
@@ -1249,8 +1251,9 @@ export default function Chat() {
                       <div
                         key={message.id}
                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group mb-1`}
+                        style={{ minWidth: 0 }}
                       >
-                        <div className="relative max-w-[65%]">
+                        <div className="relative max-w-[65%]" style={{ wordBreak: 'break-word' }}>
                           <div
                             className={`rounded-lg shadow-sm relative ${
                               isOwn
