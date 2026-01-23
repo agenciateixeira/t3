@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,28 @@ export default function Auth() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Change theme-color to green for auth page
+  useEffect(() => {
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    const originalColor = metaThemeColor?.getAttribute('content');
+
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', '#2db4af');
+    }
+
+    // Also set body background for overscroll
+    document.body.style.backgroundColor = '#2db4af';
+    document.documentElement.style.backgroundColor = '#2db4af';
+
+    return () => {
+      if (metaThemeColor && originalColor) {
+        metaThemeColor.setAttribute('content', originalColor);
+      }
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -15,28 +15,28 @@ export default defineConfig({
         short_name: 'T3ntaculos',
         description: 'Ferramenta interna de gestão para agência digital',
         theme_color: '#2db4af',
-        background_color: '#ffffff',
+        background_color: '#2db4af',
         display: 'standalone',
         orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
         icons: [
           {
-            src: '/logo-sidebar.png',
+            src: '/logo-tentacle.jpeg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/jpeg',
             purpose: 'any'
           },
           {
-            src: '/logo-sidebar.png',
+            src: '/logo-tentacle.jpeg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/jpeg',
             purpose: 'any'
           },
           {
-            src: '/logo-sidebar.png',
+            src: '/logo-tentacle.jpeg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/jpeg',
             purpose: 'maskable'
           }
         ]

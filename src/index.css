@@ -165,7 +165,20 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
   .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -173,5 +186,10 @@
   .no-overscroll {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Auth page full green background including overscroll */
+  .auth-page-bg {
+    background-color: #2db4af;
   }
 }

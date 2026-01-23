@@ -916,7 +916,7 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-64px)] lg:h-[calc(100vh-32px)] flex overflow-x-hidden">
+      <div className="h-[calc(100dvh-64px-env(safe-area-inset-top))] lg:h-[calc(100vh-32px)] flex overflow-x-hidden">
         {/* Conversations List */}
         <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white`}>
           <div className="px-4 py-3 bg-[#f0f2f5]">

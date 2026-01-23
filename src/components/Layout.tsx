@@ -156,7 +156,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Page content */}
-        <main className="min-h-screen pb-24 lg:pb-0">{children}</main>
+        <main className="min-h-screen pt-safe pb-20 lg:pb-0" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>{children}</main>
       </div>
 
       {/* Mobile bottom navigation */}
