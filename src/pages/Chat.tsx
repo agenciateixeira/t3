@@ -916,7 +916,7 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="h-[calc(100dvh-64px-env(safe-area-inset-top))] lg:h-[calc(100vh-32px)] flex overflow-x-hidden">
+      <div className="h-[calc(100dvh-4rem)] lg:h-[calc(100vh-32px)] flex overflow-x-hidden bg-white">
         {/* Conversations List */}
         <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white`}>
           <div className="px-4 py-3 bg-[#f0f2f5]">
@@ -928,12 +928,12 @@ export default function Chat() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700"
+                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0"
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent side="bottom" align="end">
                   <DropdownMenuItem onClick={() => setIsNewConversationOpen(true)}>
                     <User className="h-4 w-4 mr-2" />
                     Nova conversa
