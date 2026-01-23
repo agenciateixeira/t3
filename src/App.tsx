@@ -15,6 +15,7 @@ import Settings from '@/pages/Settings';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/NotFound';
+import ActiveTimers from '@/pages/ActiveTimers';
 
 function App() {
   return (
@@ -96,6 +97,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/active-timers"
+            element={
+              <ProtectedRoute>
+                <ActiveTimers />
               </ProtectedRoute>
             }
           />

@@ -19,6 +19,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -784,6 +785,9 @@ export default function DealDetailModal({
       <DialogContent className="max-w-7xl h-[95vh] p-0 gap-0 overflow-hidden">
         {/* HEADER FIXO */}
         <DialogHeader className="px-6 py-4 border-b bg-white sticky top-0 z-10">
+          <DialogDescription className="sr-only">
+            Visualize e edite os detalhes da oportunidade, incluindo descrição, campos personalizados, checklists, anexos e atividades.
+          </DialogDescription>
           <div className="flex items-center justify-between">
             <div className="flex-1 flex items-center gap-4">
               <DialogTitle className="text-2xl font-semibold flex-1">
@@ -1222,7 +1226,7 @@ export default function DealDetailModal({
                   }))}
                   teams={teams}
                 />
-                <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
+                <Button size="sm" onClick={() => handleAddComment()} disabled={!newComment.trim()}>
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Comentar
                 </Button>

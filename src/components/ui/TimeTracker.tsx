@@ -5,13 +5,16 @@ import { TimeLog } from '@/types';
 import { Button } from './button';
 import { Card } from './card';
 import { Badge } from './badge';
-import { Play, Pause, Clock, History, Square } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { Play, Pause, Clock, History, Square, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from './popover';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface TimeTrackerProps {
   dealId?: string;
@@ -117,10 +120,12 @@ export default function TimeTracker({ dealId, taskId, compact = false }: TimeTra
     try {
       const query = supabase
         .from('time_logs')
-        .select('*')
-        .eq('user_id', user.id)
+        .select(`
+          *,
+          user:profiles!time_logs_user_id_fkey(id, full_name, avatar_url)
+        `)
         .not('duration_seconds', 'is', null)
-        .order('created_at', { ascending: false })
+        .order('end_time', { ascending: false })
         .limit(10);
 
       if (dealId) query.eq('deal_id', dealId);
@@ -353,6 +358,16 @@ export default function TimeTracker({ dealId, taskId, compact = false }: TimeTra
     }
   };
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (compact) {
     return (
       <div className="flex items-center gap-2">
@@ -360,11 +375,11 @@ export default function TimeTracker({ dealId, taskId, compact = false }: TimeTra
           <Button
             size="sm"
             variant="destructive"
-            onClick={handleStop}
+            onClick={handleFinish}
             disabled={isLoading}
             className="gap-2"
           >
-            <Pause className="h-3 w-3" />
+            <Square className="h-3 w-3" />
             {formatCompactDuration(elapsedSeconds)}
           </Button>
         ) : (
@@ -396,10 +411,23 @@ export default function TimeTracker({ dealId, taskId, compact = false }: TimeTra
                 </div>
                 <div className="max-h-48 overflow-y-auto space-y-2">
                   {timeLogs.map((log) => (
-                    <div key={log.id} className="text-xs p-2 bg-gray-50 rounded">
-                      <div className="font-medium">{formatDuration(log.duration_seconds || 0)}</div>
-                      <div className="text-gray-500">
-                        {new Date(log.start_time).toLocaleDateString('pt-BR')}
+                    <div key={log.id} className="text-xs p-2 bg-gray-50 rounded space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={log.user?.avatar_url || undefined} />
+                          <AvatarFallback className="text-[10px] bg-[#2db4af] text-white">
+                            {getInitials(log.user?.full_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{log.user?.full_name || 'Usuário'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-[#2db4af]">
+                          {formatDuration(log.duration_seconds || 0)}
+                        </span>
+                        <span className="text-gray-500">
+                          {format(new Date(log.end_time || log.start_time), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -488,11 +516,24 @@ export default function TimeTracker({ dealId, taskId, compact = false }: TimeTra
             </h4>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {timeLogs.map((log) => (
-                <div key={log.id} className="flex justify-between text-sm p-2 bg-gray-50 rounded">
-                  <span className="font-medium">{formatDuration(log.duration_seconds || 0)}</span>
-                  <span className="text-gray-500">
-                    {new Date(log.start_time).toLocaleDateString('pt-BR')}
-                  </span>
+                <div key={log.id} className="p-3 bg-gray-50 rounded space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={log.user?.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs bg-[#2db4af] text-white">
+                        {getInitials(log.user?.full_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-sm">{log.user?.full_name || 'Usuário'}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold text-[#2db4af] text-base">
+                      {formatDuration(log.duration_seconds || 0)}
+                    </span>
+                    <span className="text-gray-500">
+                      {format(new Date(log.end_time || log.start_time), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

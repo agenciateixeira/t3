@@ -135,16 +135,23 @@
   }
 
   html {
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
+    height: 100%;
   }
 
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    min-height: 100vh;
-    overflow-y: auto;
+    min-height: 100%;
+    overflow-y: scroll;
     overflow-x: hidden;
+    height: 100%;
+  }
+
+  #root {
+    min-height: 100%;
+    overflow-y: visible;
   }
 }
 
