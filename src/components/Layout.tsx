@@ -176,11 +176,11 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         <div
-          className="flex items-center justify-around px-1"
+          className="flex items-end justify-around px-1 pb-2"
           style={{
-            height: '64px',
-            paddingBottom: 'env(safe-area-inset-bottom)',
-            touchAction: 'manipulation'
+            paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
+            touchAction: 'manipulation',
+            minHeight: '64px'
           }}
         >
           {/* 4 main items */}
@@ -191,9 +191,10 @@ export default function Layout({ children }: LayoutProps) {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex flex-col items-center justify-center gap-1 px-2 py-1.5 flex-1 transition-colors ${
+                className={`flex flex-col items-center justify-end gap-1 px-2 py-1.5 flex-1 transition-colors ${
                   active ? 'text-[#2db4af]' : 'text-gray-600'
                 }`}
+                style={{ touchAction: 'manipulation' }}
               >
                 <Icon className="h-6 w-6" />
                 <span className="text-[10px] font-medium truncate max-w-full">{item.name}</span>
