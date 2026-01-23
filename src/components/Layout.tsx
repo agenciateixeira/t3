@@ -172,11 +172,17 @@ export default function Layout({ children }: LayoutProps) {
         className="lg:hidden fixed left-0 right-0 bg-white border-t border-gray-200 shadow-lg"
         style={{
           bottom: 0,
-          zIndex: 9999,
-          paddingBottom: 'env(safe-area-inset-bottom)'
+          zIndex: 9999
         }}
       >
-        <div className="flex items-center justify-around h-16 px-1" style={{ touchAction: 'manipulation' }}>
+        <div
+          className="flex items-center justify-around px-1"
+          style={{
+            height: '64px',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            touchAction: 'manipulation'
+          }}
+        >
           {/* 4 main items */}
           {mobileMainItems.map((item) => {
             const Icon = item.icon;

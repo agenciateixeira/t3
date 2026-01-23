@@ -917,12 +917,14 @@ export default function Chat() {
   return (
     <Layout>
       <div
-        className="lg:static lg:h-[calc(100vh-32px)] flex bg-white fixed inset-0 lg:inset-auto"
+        className="lg:static lg:h-[calc(100vh-32px)] flex bg-white fixed inset-0 lg:inset-auto w-full max-w-full"
         style={{
           top: 'env(safe-area-inset-top)',
           bottom: 'calc(64px + env(safe-area-inset-bottom))',
           overflowX: 'hidden',
-          overflowY: 'hidden'
+          overflowY: 'hidden',
+          width: '100%',
+          maxWidth: '100vw'
         }}
       >
         {/* Conversations List */}
@@ -934,16 +936,17 @@ export default function Chat() {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0"
-                    style={{ touchAction: 'manipulation' }}
+                  <button
+                    type="button"
+                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0 inline-flex items-center justify-center"
+                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                    onTouchStart={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.8)'}
+                    onTouchEnd={(e) => e.currentTarget.style.backgroundColor = ''}
                   >
                     <Plus className="h-5 w-5" />
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="end" className="z-[10000]" style={{ touchAction: 'manipulation' }}>
+                <DropdownMenuContent side="bottom" align="end" className="z-[10000]">
                   <DropdownMenuItem onClick={() => setIsNewConversationOpen(true)}>
                     <User className="h-4 w-4 mr-2" />
                     Nova conversa
@@ -1134,15 +1137,16 @@ export default function Chat() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {/* Back button - Mobile only */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
+                      type="button"
                       onClick={() => setSelectedConversation(null)}
-                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0"
-                      style={{ touchAction: 'manipulation' }}
+                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md"
+                      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                      onTouchStart={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)'}
+                      onTouchEnd={(e) => e.currentTarget.style.backgroundColor = ''}
                     >
                       <ChevronLeft className="h-6 w-6" />
-                    </Button>
+                    </button>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedConversation.avatar_url || undefined} />
                       <AvatarFallback className="bg-[#2db4af] text-white">
@@ -1175,16 +1179,17 @@ export default function Chat() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-gray-600 hover:bg-white/50 flex-shrink-0"
-                        style={{ touchAction: 'manipulation' }}
+                      <button
+                        type="button"
+                        className="text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md"
+                        style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                        onTouchStart={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)'}
+                        onTouchEnd={(e) => e.currentTarget.style.backgroundColor = ''}
                       >
                         <MoreVertical className="h-5 w-5" />
-                      </Button>
+                      </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="z-[10000]" style={{ touchAction: 'manipulation' }}>
+                    <DropdownMenuContent align="end" className="z-[10000]">
                       <DropdownMenuItem
                         className="text-red-600 focus:text-red-600"
                         onClick={() => setConversationToDelete(selectedConversation)}

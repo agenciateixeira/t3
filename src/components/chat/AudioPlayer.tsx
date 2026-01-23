@@ -61,7 +61,7 @@ export default function AudioPlayer({ src, isOwn = false }: AudioPlayerProps) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-2 min-w-[250px]">
+    <div className="flex items-center gap-2 w-full max-w-[250px]">
       <audio ref={audioRef} src={src} preload="metadata" />
 
       <Button
@@ -73,6 +73,7 @@ export default function AudioPlayer({ src, isOwn = false }: AudioPlayerProps) {
             ? 'hover:bg-gray-700/20 text-gray-800'
             : 'hover:bg-gray-100 text-gray-700'
         }`}
+        style={{ touchAction: 'manipulation' }}
       >
         {isPlaying ? (
           <Pause className="h-4 w-4 fill-current" />
