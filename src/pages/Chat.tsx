@@ -916,10 +916,17 @@ export default function Chat() {
 
   return (
     <Layout>
-      <div className="h-[calc(100dvh-4rem)] lg:h-[calc(100vh-32px)] flex overflow-x-hidden bg-white">
+      <div
+        className="lg:static lg:h-[calc(100vh-32px)] flex overflow-x-hidden bg-white fixed inset-0 lg:inset-auto"
+        style={{
+          top: 'env(safe-area-inset-top)',
+          bottom: 'calc(64px + env(safe-area-inset-bottom))'
+        }}
+      >
         {/* Conversations List */}
         <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 border-r border-gray-300 flex-col bg-white`}>
-          <div className="px-4 py-3 bg-[#f0f2f5]">
+          {/* Header fixo */}
+          <div className="px-4 py-3 bg-[#f0f2f5] flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-gray-900">Conversas</h2>
 
@@ -933,7 +940,7 @@ export default function Chat() {
                     <Plus className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="end">
+                <DropdownMenuContent side="bottom" align="end" className="z-[10000]">
                   <DropdownMenuItem onClick={() => setIsNewConversationOpen(true)}>
                     <User className="h-4 w-4 mr-2" />
                     Nova conversa
