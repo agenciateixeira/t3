@@ -70,7 +70,7 @@ export default function AudioPlayer({ src, isOwn = false }: AudioPlayerProps) {
         variant="ghost"
         className={`h-8 w-8 rounded-full flex-shrink-0 ${
           isOwn
-            ? 'hover:bg-white/20 text-white'
+            ? 'hover:bg-gray-700/20 text-gray-800'
             : 'hover:bg-gray-100 text-gray-700'
         }`}
       >
@@ -85,13 +85,13 @@ export default function AudioPlayer({ src, isOwn = false }: AudioPlayerProps) {
         <div className="relative flex-1 h-1 group">
           <div
             className={`absolute h-full rounded-full ${
-              isOwn ? 'bg-white/30' : 'bg-gray-300'
+              isOwn ? 'bg-gray-400/40' : 'bg-gray-300'
             }`}
             style={{ width: '100%' }}
           />
           <div
             className={`absolute h-full rounded-full ${
-              isOwn ? 'bg-white' : 'bg-[#2db4af]'
+              isOwn ? 'bg-gray-700' : 'bg-[#2db4af]'
             }`}
             style={{ width: `${progress}%` }}
           />
@@ -107,7 +107,7 @@ export default function AudioPlayer({ src, isOwn = false }: AudioPlayerProps) {
         </div>
 
         <span className={`text-xs tabular-nums flex-shrink-0 ${
-          isOwn ? 'text-white/90' : 'text-gray-600'
+          isOwn ? 'text-gray-800' : 'text-gray-600'
         }`}>
           {formatTime(isPlaying ? currentTime : duration)}
         </span>
