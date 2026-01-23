@@ -156,7 +156,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Page content */}
-        <main className="min-h-screen pt-safe pb-20 lg:pb-0" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>{children}</main>
+        <main className="min-h-screen pt-safe pb-28 lg:pb-0" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>{children}</main>
       </div>
 
       {/* Mobile bottom navigation */}
@@ -164,10 +164,10 @@ export default function Layout({ children }: LayoutProps) {
         className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg"
         style={{
           zIndex: 9999,
-          paddingBottom: 'env(safe-area-inset-bottom)'
+          paddingBottom: 'max(env(safe-area-inset-bottom), 8px)'
         }}
       >
-        <div className="flex items-center justify-around h-16 px-1">
+        <div className="flex items-center justify-around h-20 px-1">
           {/* 4 main items */}
           {mobileMainItems.map((item) => {
             const Icon = item.icon;
