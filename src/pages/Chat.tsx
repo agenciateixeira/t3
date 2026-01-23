@@ -917,14 +917,12 @@ export default function Chat() {
   return (
     <Layout>
       <div
-        className="lg:static lg:h-[calc(100vh-32px)] flex bg-white fixed inset-0 lg:inset-auto w-full max-w-full"
+        className="lg:static lg:h-[calc(100vh-32px)] flex bg-white fixed inset-0 lg:inset-auto"
         style={{
           top: 'env(safe-area-inset-top)',
           bottom: 'calc(64px + env(safe-area-inset-bottom))',
           overflowX: 'hidden',
-          overflowY: 'hidden',
-          width: '100%',
-          maxWidth: '100vw'
+          overflowY: 'hidden'
         }}
       >
         {/* Conversations List */}
