@@ -100,30 +100,9 @@ export default function Tasks() {
 
       if (profilesError) throw profilesError;
 
-      // Filtrar tarefas baseado em hierarquia
-      let filteredTasksByHierarchy = tasksData || [];
-
-      if (profile?.hierarchy === 'employee') {
-        // Employee vê apenas tarefas atribuídas a ele ou criadas por ele
-        filteredTasksByHierarchy = filteredTasksByHierarchy.filter(task =>
-          task.assignee_id === profile.id ||
-          task.created_by === profile.id
-        );
-      } else if (profile?.hierarchy === 'team_manager') {
-        // Team manager vê tarefas do seu time
-        const teamMemberIds = (profilesData || [])
-          .filter(p => p.team_id === profile.team_id)
-          .map(p => p.id);
-
-        filteredTasksByHierarchy = filteredTasksByHierarchy.filter(task =>
-          teamMemberIds.includes(task.assignee_id) ||
-          teamMemberIds.includes(task.created_by)
-        );
-      }
-      // Admin vê todas
-
-      setTasks(filteredTasksByHierarchy);
-      setFilteredTasks(filteredTasksByHierarchy);
+      // Todos os usuários veem todas as tarefas
+      setTasks(tasksData || []);
+      setFilteredTasks(tasksData || []);
       setClients(clientsData || []);
       setProfiles(profilesData || []);
     } catch (error: any) {
@@ -138,24 +117,6 @@ export default function Tasks() {
   };
 
   const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
-    // Verificar permissão
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const canEdit = profile?.hierarchy === 'admin' ||
-                    profile?.hierarchy === 'team_manager' ||
-                    (profile?.hierarchy === 'employee' &&
-                     (task.assignee_id === profile.id || task.created_by === profile.id));
-
-    if (!canEdit) {
-      toast({
-        variant: 'destructive',
-        title: 'Sem permissão',
-        description: 'Você não tem permissão para editar esta tarefa.',
-      });
-      return;
-    }
-
     // Optimistic update - update local state immediately
     setTasks((prevTasks) =>
       prevTasks.map((task) =>

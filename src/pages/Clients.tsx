@@ -90,24 +90,9 @@ export default function Clients() {
 
       if (error) throw error;
 
-      // Filtrar clientes baseado em hierarquia
-      let filteredByHierarchy = data || [];
-
-      if (profile?.hierarchy === 'employee') {
-        // Employee vê apenas clientes que ele é responsável
-        filteredByHierarchy = filteredByHierarchy.filter(client =>
-          client.responsible_id === profile.id
-        );
-      } else if (profile?.hierarchy === 'team_manager') {
-        // Team manager vê clientes do seu time
-        filteredByHierarchy = filteredByHierarchy.filter(client =>
-          client.team_id === profile.team_id
-        );
-      }
-      // Admin vê todos
-
-      setClients(filteredByHierarchy);
-      setFilteredClients(filteredByHierarchy);
+      // Todos os usuários veem todos os clientes
+      setClients(data || []);
+      setFilteredClients(data || []);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -120,19 +105,6 @@ export default function Clients() {
   };
 
   const handleEdit = (client: Client) => {
-    const canEdit = profile?.hierarchy === 'admin' ||
-                    profile?.hierarchy === 'team_manager' ||
-                    (profile?.hierarchy === 'employee' && client.responsible_id === profile.id);
-
-    if (!canEdit) {
-      toast({
-        variant: 'destructive',
-        title: 'Sem permissão',
-        description: 'Você não tem permissão para editar este cliente.',
-      });
-      return;
-    }
-
     setSelectedClient(client);
     setDialogOpen(true);
   };

@@ -395,14 +395,42 @@ export default function Calendar() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, cardColor?: string | null) => {
+    // Se a tarefa tem card_color definido, usar ela com opacidade reduzida (tons claros)
+    if (cardColor) {
+      return `border border-gray-200 text-gray-900 hover:shadow-sm`;
+    }
+
+    // Cores suaves/claras baseadas no status (fallback)
     const colors: Record<string, string> = {
-      todo: 'bg-gradient-to-br from-slate-500 to-slate-600 text-white border-slate-600 shadow-sm hover:shadow-md',
-      in_progress: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-600 shadow-sm hover:shadow-md',
-      in_review: 'bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-600 shadow-sm hover:shadow-md',
-      done: 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-emerald-600 shadow-sm hover:shadow-md',
+      todo: 'bg-gray-100 text-gray-700 border border-gray-200 hover:shadow-sm',
+      in_progress: 'bg-blue-50 text-blue-700 border border-blue-100 hover:shadow-sm',
+      in_review: 'bg-amber-50 text-amber-700 border border-amber-100 hover:shadow-sm',
+      done: 'bg-emerald-50 text-emerald-700 border border-emerald-100 hover:shadow-sm',
     };
     return colors[status] || colors.todo;
+  };
+
+  const getCardColorStyle = (cardColor?: string | null) => {
+    if (!cardColor) return {};
+
+    // Converter cor hex para RGB e aplicar opacidade baixa para tom claro
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    };
+
+    const rgb = hexToRgb(cardColor);
+    if (!rgb) return {};
+
+    return {
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`,
+      borderColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`,
+    };
   };
 
   const getStatusLabel = (status: string) => {
@@ -677,13 +705,14 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleTaskClick(task);
                               }}
-                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 border hover:scale-[1.02] ${getStatusColor(
-                                task.status
+                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 hover:scale-[1.02] ${getStatusColor(
+                                task.status, task.card_color
                               )}`}
+                              style={getCardColorStyle(task.card_color)}
                             >
                               <div className="font-semibold truncate">{task.title}</div>
                               {task.scheduled_time && (
-                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-90">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-75">
                                   <Clock className="h-2.5 w-2.5" />
                                   {task.scheduled_time.substring(0, 5)}
                                 </div>
@@ -768,13 +797,14 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleTaskClick(task);
                               }}
-                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 border hover:scale-[1.02] ${getStatusColor(
-                                task.status
+                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 hover:scale-[1.02] ${getStatusColor(
+                                task.status, task.card_color
                               )}`}
+                              style={getCardColorStyle(task.card_color)}
                             >
                               <div className="font-semibold truncate">{task.title}</div>
                               {task.scheduled_time && (
-                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-90">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-75">
                                   <Clock className="h-2.5 w-2.5" />
                                   {task.scheduled_time.substring(0, 5)}
                                 </div>
@@ -857,18 +887,19 @@ export default function Calendar() {
                                     e.stopPropagation();
                                     handleTaskClick(task);
                                   }}
-                                  className={`px-3 py-2.5 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.01] ${getStatusColor(
-                                    task.status
+                                  className={`px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01] ${getStatusColor(
+                                    task.status, task.card_color
                                   )}`}
+                                  style={getCardColorStyle(task.card_color)}
                                 >
                                   <div className="font-semibold text-sm">{task.title}</div>
-                                  <div className="text-xs mt-1.5 flex items-center gap-1 opacity-90">
+                                  <div className="text-xs mt-1.5 flex items-center gap-1 opacity-75">
                                     <Clock className="h-3 w-3" />
                                     {task.scheduled_time?.substring(0, 5)}
                                     {task.end_time && ` - ${task.end_time.substring(0, 5)}`}
                                   </div>
                                   {task.client && (
-                                    <div className="text-xs mt-1 flex items-center gap-1 opacity-90">
+                                    <div className="text-xs mt-1 flex items-center gap-1 opacity-75">
                                       <User className="h-3 w-3" />
                                       {task.client.name}
                                     </div>
@@ -1197,8 +1228,9 @@ export default function Calendar() {
                       </h3>
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                          selectedTask.status
+                          selectedTask.status, selectedTask.card_color
                         )}`}
+                        style={getCardColorStyle(selectedTask.card_color)}
                       >
                         {getStatusLabel(selectedTask.status)}
                       </span>
