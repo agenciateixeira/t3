@@ -26,12 +26,7 @@ export function useToast() {
     const id = Math.random().toString(36).substring(7)
     const newToast: Toast = { id, ...options }
 
-    console.log('🔔 Toast created:', newToast)
-    setToasts((prev) => {
-      const updated = [...prev, newToast]
-      console.log('📋 Toasts state updated:', updated)
-      return updated
-    })
+    setToasts((prev) => [...prev, newToast])
 
     // Auto-dismiss after specified duration or default 5 seconds
     const duration = options.duration || 5000

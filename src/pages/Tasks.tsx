@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Search, LayoutGrid, List, Workflow } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { useSearchParams } from 'react-router-dom';
 import TaskDialog from '@/components/tasks/TaskDialog';
 import KanbanBoard from '@/components/tasks/KanbanBoard';
@@ -23,7 +23,7 @@ export default function Tasks() {
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const { toast } = useToast();
+  const { toast } = useToastContext();
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {

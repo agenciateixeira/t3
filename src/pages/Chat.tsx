@@ -29,7 +29,7 @@ import {
   Archive,
   ChevronLeft,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import {
   Dialog,
   DialogContent,
@@ -92,7 +92,7 @@ interface Conversation {
 
 export default function Chat() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { toast } = useToastContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -117,6 +117,8 @@ export default function Chat() {
   // New group dialog
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [showMobilePlusMenu, setShowMobilePlusMenu] = useState(false);
+  const [showMobileOptionsMenu, setShowMobileOptionsMenu] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [groupForm, setGroupForm] = useState({
     name: '',
@@ -927,24 +929,58 @@ export default function Chat() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-gray-900">Conversas</h2>
 
+              {/* Mobile: Botão simples que abre menu nativo */}
+              <div className="lg:hidden relative">
+                <button
+                  type="button"
+                  onClick={() => setShowMobilePlusMenu(!showMobilePlusMenu)}
+                  className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0 inline-flex items-center justify-center"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+                {showMobilePlusMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowMobilePlusMenu(false)}
+                    />
+                    <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                      <button
+                        onClick={() => {
+                          setIsNewConversationOpen(true);
+                          setShowMobilePlusMenu(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
+                      >
+                        <User className="h-4 w-4" />
+                        Nova conversa
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsNewGroupOpen(true);
+                          setShowMobilePlusMenu(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
+                      >
+                        <Users className="h-4 w-4" />
+                        Novo grupo
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Desktop: Dropdown do Radix UI */}
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild className="hidden lg:inline-flex">
                   <button
                     type="button"
-                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0 inline-flex items-center justify-center relative"
-                    style={{
-                      touchAction: 'manipulation',
-                      WebkitTapHighlightColor: 'transparent',
-                      WebkitUserSelect: 'none',
-                      userSelect: 'none',
-                      cursor: 'pointer',
-                      zIndex: 1000
-                    }}
+                    className="h-10 w-10 rounded-full hover:bg-white/80 text-gray-700 flex-shrink-0 inline-flex items-center justify-center"
                   >
-                    <Plus className="h-5 w-5 pointer-events-none" />
+                    <Plus className="h-5 w-5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="end" className="z-[10000]">
+                <DropdownMenuContent side="bottom" align="end">
                   <DropdownMenuItem onClick={() => setIsNewConversationOpen(true)}>
                     <User className="h-4 w-4 mr-2" />
                     Nova conversa
@@ -1138,17 +1174,9 @@ export default function Chat() {
                     <button
                       type="button"
                       onClick={() => setSelectedConversation(null)}
-                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md relative"
-                      style={{
-                        touchAction: 'manipulation',
-                        WebkitTapHighlightColor: 'transparent',
-                        WebkitUserSelect: 'none',
-                        userSelect: 'none',
-                        cursor: 'pointer',
-                        zIndex: 1000
-                      }}
+                      className="lg:hidden text-gray-600 hover:bg-white/50 flex-shrink-0 h-10 w-10 inline-flex items-center justify-center rounded-md"
                     >
-                      <ChevronLeft className="h-6 w-6 pointer-events-none" />
+                      <ChevronLeft className="h-6 w-6" />
                     </button>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={selectedConversation.avatar_url || undefined} />

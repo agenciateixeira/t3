@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { Loader2, User, Upload, Lock, Globe, Bell, LogOut, Camera, Shield, CreditCard, Phone } from 'lucide-react';
 import { isValidCPF, formatCPFInput, formatPhoneInput, onlyNumbers } from '@/utils/validators';
 import {
@@ -41,7 +41,7 @@ export default function Profile() {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [hasProfileChanges, setHasProfileChanges] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  const { toast } = useToastContext();
 
   const [profileForm, setProfileForm] = useState({
     full_name: '',

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -81,7 +81,7 @@ interface AuditLog {
 export default function Settings() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useToastContext();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Loading states

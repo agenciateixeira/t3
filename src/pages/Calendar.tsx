@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Clock, User, Edit2, X, Plus, ExternalLink, MapPin, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import {
   format,
   startOfMonth,
@@ -87,7 +87,7 @@ export default function Calendar() {
     end_time: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
   });
-  const { toast } = useToast();
+  const { toast } = useToastContext();
 
   useEffect(() => {
     fetchTasks();

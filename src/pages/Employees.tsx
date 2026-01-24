@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users as UsersIcon, UserPlus, Mail, Phone, Pencil, Trash2, Search, X, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { isValidCPF, formatCPFInput, onlyNumbers } from '@/utils/validators';
 import {
   Dialog,
@@ -105,7 +105,7 @@ export default function Employees() {
   const [filterTeam, setFilterTeam] = useState('');
   const [filterHierarchy, setFilterHierarchy] = useState('');
 
-  const { toast } = useToast();
+  const { toast } = useToastContext();
 
   useEffect(() => {
     fetchTeams();

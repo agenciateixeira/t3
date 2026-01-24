@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { Plus, ExternalLink, Trash2, Search, Filter, X, Key } from 'lucide-react';
 import {
   Select,
@@ -54,7 +54,7 @@ const HIERARCHIES = [
 ];
 
 export default function Tools() {
-  const { toast } = useToast();
+  const { toast } = useToastContext();
   const { profile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

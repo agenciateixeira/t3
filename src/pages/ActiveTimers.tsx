@@ -29,7 +29,7 @@ import {
   ChevronRight,
   History,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -78,7 +78,7 @@ interface Filters {
 
 export default function ActiveTimers() {
   const { user, profile } = useAuth();
-  const { toast } = useToast();
+  const { toast } = useToastContext();
   const [activeTimers, setActiveTimers] = useState<Timer[]>([]);
   const [historyTimers, setHistoryTimers] = useState<Timer[]>([]);
   const [loading, setLoading] = useState(true);

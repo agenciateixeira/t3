@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Search, Building2, Mail, Phone, Globe, LayoutGrid, List, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import ClientDialog from '@/components/clients/ClientDialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -36,7 +36,7 @@ export default function Clients() {
   const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const { toast } = useToast();
+  const { toast } = useToastContext();
 
   useEffect(() => {
     fetchClients();

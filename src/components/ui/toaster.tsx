@@ -1,11 +1,9 @@
-import { useToast } from "@/hooks/use-toast"
+import { useToastContext } from "@/contexts/ToastContext"
 import { cn } from "@/lib/utils"
 import { X, CheckCircle2, AlertCircle, Info } from "lucide-react"
 
 export function Toaster() {
-  const { toasts, dismiss } = useToast()
-
-  console.log('🎨 Toaster rendering, toasts count:', toasts.length, toasts)
+  const { toasts, dismiss } = useToastContext()
 
   return (
     <div
@@ -17,7 +15,6 @@ export function Toaster() {
       }}
     >
       {toasts.map(({ id, title, description, variant, ...props }) => {
-        console.log('🍞 Rendering toast:', { id, title, description, variant })
         const isDestructive = variant === "destructive"
         const isSuccess = !variant || variant === "default"
 

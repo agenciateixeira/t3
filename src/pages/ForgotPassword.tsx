@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useToastContext } from '@/contexts/ToastContext';
 import { z } from 'zod';
 import { Loader2, ArrowLeft } from 'lucide-react';
 
@@ -19,7 +19,7 @@ export default function ForgotPassword() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { resetPassword } = useAuth();
-  const { toast } = useToast();
+  const { toast } = useToastContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

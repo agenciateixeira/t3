@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/useAuth';
+import { ToastProvider } from '@/contexts/ToastContext';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Auth from '@/pages/Auth';
@@ -21,6 +22,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ToastProvider>
         <Routes>
           {/* Public routes */}
           <Route path="/auth" element={<Auth />} />
@@ -114,6 +116,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

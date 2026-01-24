@@ -121,66 +121,52 @@ export default function Auth() {
       // Detectar tipo de identificador
       const cleanIdentifier = onlyNumbers(identifier);
 
-      console.log('🔍 Login attempt:', { identifier, cleanIdentifier });
 
       // Se contém @ é email
       if (identifier.includes('@')) {
         identifierType = 'email';
         emailToLogin = identifier;
         identifierFound = true; // Email sempre é válido para tentar login
-        console.log('📧 Detected as email');
       }
       // Se tem 11 dígitos numéricos, pode ser CPF ou telefone
       else if (cleanIdentifier.length === 11) {
-        console.log('🔢 11 digits detected, trying CPF first...');
         // Tentar como CPF primeiro
         const { data: emailFromCPF, error: cpfError } = await supabase
           .rpc('get_email_by_cpf', { cpf_input: cleanIdentifier });
 
-        console.log('CPF lookup result:', { emailFromCPF, cpfError });
 
         if (!cpfError && emailFromCPF) {
           identifierType = 'CPF';
           emailToLogin = emailFromCPF;
           identifierFound = true;
-          console.log('✅ Found by CPF');
         } else {
-          console.log('❌ Not found by CPF, trying as phone...');
           // Se não encontrou por CPF, tentar como telefone
           const { data: emailFromPhone, error: phoneError } = await supabase
             .rpc('get_email_by_phone', { phone_input: cleanIdentifier });
 
-          console.log('Phone lookup result:', { emailFromPhone, phoneError });
 
           if (!phoneError && emailFromPhone) {
             identifierType = 'telefone';
             emailToLogin = emailFromPhone;
             identifierFound = true;
-            console.log('✅ Found by phone');
           } else {
-            console.log('❌ Not found by phone either');
           }
         }
       }
       // Se tem 10 dígitos, é telefone
       else if (cleanIdentifier.length === 10) {
-        console.log('📱 10 digits detected, trying as phone...');
         const { data: emailFromPhone, error: phoneError } = await supabase
           .rpc('get_email_by_phone', { phone_input: cleanIdentifier });
 
-        console.log('Phone lookup result:', { emailFromPhone, phoneError });
 
         if (!phoneError && emailFromPhone) {
           identifierType = 'telefone';
           emailToLogin = emailFromPhone;
           identifierFound = true;
-          console.log('✅ Found by phone');
         } else {
-          console.log('❌ Not found by phone');
         }
       }
 
-      console.log('Final state:', { identifierFound, identifierType, emailToLogin });
 
       // Se não conseguiu converter para email e não é email
       if (!identifierFound || !emailToLogin.includes('@')) {
@@ -196,7 +182,6 @@ export default function Auth() {
           errorMessage = 'CPF, telefone ou email não encontrado no sistema ou sem cadastro.';
         }
 
-        console.log('🚫 Identifier not found, showing error:', errorMessage);
 
         setToastMessage({
           variant: 'destructive',
@@ -208,7 +193,6 @@ export default function Auth() {
         return;
       }
 
-      console.log('🔐 Attempting login with email:', emailToLogin);
       const { error } = await signIn(emailToLogin, password);
 
       if (error) {
