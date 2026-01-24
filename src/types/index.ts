@@ -529,3 +529,32 @@ export interface TimeStats {
   avg_seconds: number;
   last_logged_at: string | null;
 }
+
+// ============================================
+// NOTIFICATIONS TYPES
+// ============================================
+
+export type NotificationType = 'task' | 'event' | 'deal' | 'assignment' | 'reminder' | 'system';
+export type NotificationReferenceType = 'task' | 'event' | 'deal';
+
+export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+  task: 'Tarefa',
+  event: 'Evento',
+  deal: 'Oportunidade',
+  assignment: 'Atribuição',
+  reminder: 'Lembrete',
+  system: 'Sistema',
+};
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  reference_id: string | null;
+  reference_type: NotificationReferenceType | null;
+  is_read: boolean;
+  created_at: string;
+  read_at: string | null;
+}

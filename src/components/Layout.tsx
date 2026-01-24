@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTaskReminders } from '@/hooks/useTaskReminders';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ import {
   MessageCircle,
   Clock,
 } from 'lucide-react';
+import NotificationCenter from '@/components/NotificationCenter';
 
 interface LayoutProps {
   children: ReactNode;
@@ -32,6 +34,9 @@ export default function Layout({ children }: LayoutProps) {
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Ativar sistema de lembretes de tarefas
+  useTaskReminders();
 
   const handleSignOut = async () => {
     await signOut();
@@ -115,6 +120,9 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* User menu */}
         <div className="border-t border-gray-200 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <NotificationCenter />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-100 transition-colors">
