@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Search, Building2, Mail, Phone, Globe, LayoutGrid, List, X } from 'lucide-react';
 import { useToastContext } from '@/contexts/ToastContext';
+import { useAuth } from '@/hooks/useAuth';
 import ClientDialog from '@/components/clients/ClientDialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,6 +38,10 @@ export default function Clients() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { toast } = useToastContext();
+  const { profile } = useAuth();
+
+  // Controle de permissões
+  const canCreateClient = profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager';
 
   useEffect(() => {
     fetchClients();
@@ -84,8 +89,25 @@ export default function Clients() {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      setClients(data || []);
-      setFilteredClients(data || []);
+
+      // Filtrar clientes baseado em hierarquia
+      let filteredByHierarchy = data || [];
+
+      if (profile?.hierarchy === 'employee') {
+        // Employee vê apenas clientes que ele é responsável
+        filteredByHierarchy = filteredByHierarchy.filter(client =>
+          client.responsible_id === profile.id
+        );
+      } else if (profile?.hierarchy === 'team_manager') {
+        // Team manager vê clientes do seu time
+        filteredByHierarchy = filteredByHierarchy.filter(client =>
+          client.team_id === profile.team_id
+        );
+      }
+      // Admin vê todos
+
+      setClients(filteredByHierarchy);
+      setFilteredClients(filteredByHierarchy);
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -98,6 +120,19 @@ export default function Clients() {
   };
 
   const handleEdit = (client: Client) => {
+    const canEdit = profile?.hierarchy === 'admin' ||
+                    profile?.hierarchy === 'team_manager' ||
+                    (profile?.hierarchy === 'employee' && client.responsible_id === profile.id);
+
+    if (!canEdit) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem permissão',
+        description: 'Você não tem permissão para editar este cliente.',
+      });
+      return;
+    }
+
     setSelectedClient(client);
     setDialogOpen(true);
   };
@@ -185,13 +220,15 @@ export default function Clients() {
             </div>
 
             {/* Botão Novo Cliente */}
-            <Button
-              onClick={handleCreate}
-              className="bg-[#2db4af] hover:bg-[#28a39e] text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
-            </Button>
+            {canCreateClient && (
+              <Button
+                onClick={handleCreate}
+                className="bg-[#2db4af] hover:bg-[#28a39e] text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Cliente
+              </Button>
+            )}
           </div>
 
           {/* Linha 2: Filtros */}
@@ -282,7 +319,7 @@ export default function Clients() {
                   ? 'Tente usar outros termos de busca'
                   : 'Comece adicionando seu primeiro cliente'}
               </p>
-              {!searchQuery && (
+              {!searchQuery && canCreateClient && (
                 <Button
                   onClick={handleCreate}
                   className="bg-[#2db4af] hover:bg-[#28a39e] text-white"

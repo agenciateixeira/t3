@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Search, LayoutGrid, List, Workflow } from 'lucide-react';
 import { useToastContext } from '@/contexts/ToastContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import TaskDialog from '@/components/tasks/TaskDialog';
 import KanbanBoard from '@/components/tasks/KanbanBoard';
@@ -24,6 +25,7 @@ export default function Tasks() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { toast } = useToastContext();
+  const { profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -98,8 +100,30 @@ export default function Tasks() {
 
       if (profilesError) throw profilesError;
 
-      setTasks(tasksData || []);
-      setFilteredTasks(tasksData || []);
+      // Filtrar tarefas baseado em hierarquia
+      let filteredTasksByHierarchy = tasksData || [];
+
+      if (profile?.hierarchy === 'employee') {
+        // Employee vê apenas tarefas atribuídas a ele ou criadas por ele
+        filteredTasksByHierarchy = filteredTasksByHierarchy.filter(task =>
+          task.assignee_id === profile.id ||
+          task.created_by === profile.id
+        );
+      } else if (profile?.hierarchy === 'team_manager') {
+        // Team manager vê tarefas do seu time
+        const teamMemberIds = (profilesData || [])
+          .filter(p => p.team_id === profile.team_id)
+          .map(p => p.id);
+
+        filteredTasksByHierarchy = filteredTasksByHierarchy.filter(task =>
+          teamMemberIds.includes(task.assignee_id) ||
+          teamMemberIds.includes(task.created_by)
+        );
+      }
+      // Admin vê todas
+
+      setTasks(filteredTasksByHierarchy);
+      setFilteredTasks(filteredTasksByHierarchy);
       setClients(clientsData || []);
       setProfiles(profilesData || []);
     } catch (error: any) {
@@ -114,6 +138,24 @@ export default function Tasks() {
   };
 
   const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
+    // Verificar permissão
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const canEdit = profile?.hierarchy === 'admin' ||
+                    profile?.hierarchy === 'team_manager' ||
+                    (profile?.hierarchy === 'employee' &&
+                     (task.assignee_id === profile.id || task.created_by === profile.id));
+
+    if (!canEdit) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem permissão',
+        description: 'Você não tem permissão para editar esta tarefa.',
+      });
+      return;
+    }
+
     // Optimistic update - update local state immediately
     setTasks((prevTasks) =>
       prevTasks.map((task) =>

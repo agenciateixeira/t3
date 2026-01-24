@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +55,13 @@ interface Team {
   member_count?: number;
 }
 
+interface JobTitle {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+}
+
 interface Employee {
   id: string;
   full_name: string;
@@ -60,8 +69,12 @@ interface Employee {
   cpf: string | null;
   avatar_url: string | null;
   hierarchy: string | null;
+  job_title_id: string | null;
   team_id: string | null;
   team?: {
+    name: string;
+  };
+  job_title?: {
     name: string;
   };
 }
@@ -73,7 +86,12 @@ const HIERARCHIES = [
 ];
 
 export default function Employees() {
+  const { profile } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToastContext();
+
   const [teams, setTeams] = useState<Team[]>([]);
+  const [jobTitles, setJobTitles] = useState<JobTitle[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTeamDialogOpen, setIsTeamDialogOpen] = useState(false);
@@ -84,6 +102,10 @@ export default function Employees() {
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Controle de permissões
+  const hasPermission = profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager';
+  const canManageEmployees = profile?.hierarchy === 'admin';
 
   const [teamFormData, setTeamFormData] = useState({
     name: '',
@@ -97,6 +119,7 @@ export default function Employees() {
     phone: '',
     cpf: '',
     hierarchy: '',
+    job_title_id: '',
     team_id: '',
   });
 
@@ -105,10 +128,26 @@ export default function Employees() {
   const [filterTeam, setFilterTeam] = useState('');
   const [filterHierarchy, setFilterHierarchy] = useState('');
 
-  const { toast } = useToastContext();
+  // Verificação de acesso
+  useEffect(() => {
+    if (!hasPermission) {
+      toast({
+        variant: 'destructive',
+        title: 'Acesso negado',
+        description: 'Apenas administradores e gerentes podem gerenciar a equipe.',
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    fetchEmployees();
+    fetchTeams();
+    fetchJobTitles();
+  }, [hasPermission]);
 
   useEffect(() => {
     fetchTeams();
+    fetchJobTitles();
     fetchEmployees();
 
     // Real-time subscriptions
@@ -166,18 +205,51 @@ export default function Employees() {
     }
   };
 
+  const fetchJobTitles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_titles')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      setJobTitles(data || []);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar cargos',
+        description: error.message,
+      });
+    }
+  };
+
   const fetchEmployees = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select(`
           *,
-          team:teams!profiles_team_id_fkey(name)
+          team:teams!profiles_team_id_fkey(name),
+          job_title:job_titles!profiles_job_title_id_fkey(name)
         `)
         .order('full_name', { ascending: true });
 
       if (error) throw error;
-      setEmployees(data || []);
+
+      // Filtrar colaboradores baseado na hierarquia
+      let filteredEmployees = data || [];
+
+      if (profile?.hierarchy === 'team_manager') {
+        // Team manager vê apenas membros do seu time
+        filteredEmployees = filteredEmployees.filter(emp =>
+          emp.team_id === profile.team_id
+        );
+      }
+      // Admin vê todos
+
+      setEmployees(filteredEmployees);
     } catch (error: any) {
       console.error('Erro ao carregar colaboradores:', error.message);
     }
@@ -223,6 +295,17 @@ export default function Employees() {
   const handleEmployeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Verificação de permissão
+    if (!canManageEmployees) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem permissão',
+        description: 'Apenas administradores podem cadastrar colaboradores.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
     // Guardar referência à sessão admin
     let adminSession: any = null;
@@ -271,6 +354,7 @@ export default function Employees() {
             phone: onlyNumbers(employeeFormData.phone),
             cpf: onlyNumbers(employeeFormData.cpf),
             hierarchy: employeeFormData.hierarchy,
+            job_title_id: employeeFormData.job_title_id || null,
             team_id: employeeFormData.team_id || null,
           },
         },
@@ -312,6 +396,7 @@ export default function Employees() {
         phone: '',
         cpf: '',
         hierarchy: '',
+        job_title_id: '',
         team_id: '',
       });
 
@@ -348,6 +433,16 @@ export default function Employees() {
   };
 
   const handleEditEmployee = (employee: Employee) => {
+    // Verificação de permissão
+    if (!canManageEmployees) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem permissão',
+        description: 'Apenas administradores podem editar colaboradores.',
+      });
+      return;
+    }
+
     setEditingEmployee(employee);
     setIsEditDialogOpen(true);
   };
@@ -375,6 +470,7 @@ export default function Employees() {
         phone: editingEmployee.phone ? onlyNumbers(editingEmployee.phone) : null,
         cpf: editingEmployee.cpf ? onlyNumbers(editingEmployee.cpf) : null,
         hierarchy: editingEmployee.hierarchy,
+        job_title_id: editingEmployee.job_title_id || null,
         team_id: editingEmployee.team_id || null,
       };
 
@@ -440,6 +536,16 @@ export default function Employees() {
 
   const handleDeleteEmployee = async () => {
     if (!deletingEmployee) return;
+
+    // Verificação de permissão
+    if (!canManageEmployees) {
+      toast({
+        variant: 'destructive',
+        title: 'Sem permissão',
+        description: 'Apenas administradores podem deletar colaboradores.',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -708,6 +814,23 @@ export default function Employees() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="employee-job-title">Cargo</Label>
+                    <select
+                      id="employee-job-title"
+                      value={employeeFormData.job_title_id}
+                      onChange={(e) => setEmployeeFormData({ ...employeeFormData, job_title_id: e.target.value })}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">Selecione um cargo...</option>
+                      {jobTitles.map((jobTitle) => (
+                        <option key={jobTitle.id} value={jobTitle.id}>
+                          {jobTitle.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="employee-team">Time</Label>
                     <Select
                       value={employeeFormData.team_id || ''}
@@ -832,6 +955,23 @@ export default function Employees() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-employee-job-title">Cargo</Label>
+                      <select
+                        id="edit-employee-job-title"
+                        value={editingEmployee.job_title_id || ''}
+                        onChange={(e) => setEditingEmployee({ ...editingEmployee, job_title_id: e.target.value })}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecione um cargo...</option>
+                        {jobTitles.map((jobTitle) => (
+                          <option key={jobTitle.id} value={jobTitle.id}>
+                            {jobTitle.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="space-y-2">
@@ -1104,6 +1244,11 @@ export default function Employees() {
                           <h3 className="font-semibold text-gray-900 truncate">
                             {employee.full_name}
                           </h3>
+                          {employee.job_title && (
+                            <Badge variant="secondary" className="mt-1 text-xs">
+                              {employee.job_title.name}
+                            </Badge>
+                          )}
                           {employee.phone && (
                             <p className="text-xs text-gray-500 mt-1">{employee.phone}</p>
                           )}

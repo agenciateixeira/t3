@@ -22,6 +22,7 @@ import {
   Mail,
   ShieldAlert,
   Workflow,
+  Briefcase,
 } from 'lucide-react';
 import {
   Select,
@@ -38,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import JobTitlesManager from '@/components/JobTitlesManager';
 
 interface OrganizationSettings {
   id: string;
@@ -448,7 +450,7 @@ export default function Settings() {
 
           {/* Tabs */}
           <Tabs defaultValue="organization" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 bg-gray-100 p-2 rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 gap-2 bg-gray-100 p-2 rounded-lg">
               <TabsTrigger value="organization" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Building2 className="h-4 w-4 mr-2" />
                 Organização
@@ -456,6 +458,10 @@ export default function Settings() {
               <TabsTrigger value="permissions" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Shield className="h-4 w-4 mr-2" />
                 Permissões
+              </TabsTrigger>
+              <TabsTrigger value="job-titles" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <Briefcase className="h-4 w-4 mr-2" />
+                Cargos
               </TabsTrigger>
               <TabsTrigger value="notifications" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Bell className="h-4 w-4 mr-2" />
@@ -676,7 +682,12 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            {/* TAB 3: NOTIFICATIONS */}
+            {/* TAB 3: JOB TITLES */}
+            <TabsContent value="job-titles" className="space-y-4">
+              <JobTitlesManager />
+            </TabsContent>
+
+            {/* TAB 4: NOTIFICATIONS */}
             <TabsContent value="notifications" className="space-y-4">
               <Card>
                 <CardHeader>
@@ -776,7 +787,7 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            {/* TAB 4: AUDIT */}
+            {/* TAB 5: AUDIT */}
             <TabsContent value="audit" className="space-y-4">
               <Card>
                 <CardHeader>

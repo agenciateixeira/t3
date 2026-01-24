@@ -47,17 +47,29 @@ export const POST_PLATFORM_LABELS: Record<PostPlatform, string> = {
   twitter: 'Twitter',
 };
 
+export interface JobTitle {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Profile {
   id: string;
   user_id: string;
   full_name: string;
   avatar_url: string | null;
   hierarchy?: UserHierarchy;
+  job_title_id?: string | null;
   team_id?: string | null;
   phone?: string | null;
   cpf?: string | null;
   created_at: string;
   updated_at: string;
+  job_title?: JobTitle;
 }
 
 export interface Team {

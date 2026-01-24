@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { Task, Client } from '@/types';
+import { Task, Client, Profile } from '@/types';
 import Layout from '@/components/Layout';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { TaskItem } from '@/components/dashboard/TaskItem';
@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [recentClients, setRecentClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -39,16 +40,19 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      // Fetch profiles para filtrar por time
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, team_id');
+
+      setProfiles(profilesData || []);
+
       // Use Promise.all for better performance
       const [
         { data: tasksData, error: tasksError },
-        { count: totalTasksCount },
-        { count: pendingTasksCount },
-        { count: completedTasksCount },
         { data: clientsData, error: clientsError },
-        { count: totalClientsCount },
       ] = await Promise.all([
-        // Fetch recent tasks (last 5)
+        // Fetch all tasks (will filter by hierarchy)
         supabase
           .from('tasks')
           .select(`
@@ -56,51 +60,60 @@ export default function Dashboard() {
             client:clients(*),
             assignee:profiles!tasks_assignee_id_fkey(id, full_name, avatar_url, hierarchy)
           `)
-          .order('created_at', { ascending: false })
-          .limit(5),
+          .order('created_at', { ascending: false }),
 
-        // Count total tasks
-        supabase
-          .from('tasks')
-          .select('*', { count: 'exact', head: true }),
-
-        // Count pending tasks
-        supabase
-          .from('tasks')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['todo', 'in_progress']),
-
-        // Count completed tasks
-        supabase
-          .from('tasks')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'done'),
-
-        // Fetch recent clients (last 5)
+        // Fetch all clients (will filter by hierarchy)
         supabase
           .from('clients')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5),
-
-        // Count total clients
-        supabase
-          .from('clients')
-          .select('*', { count: 'exact', head: true }),
+          .order('created_at', { ascending: false }),
       ]);
 
       if (tasksError) throw tasksError;
       if (clientsError) throw clientsError;
 
+      // Filtrar dados baseado em hierarquia
+      let filteredTasks = tasksData || [];
+      let filteredClients = clientsData || [];
+
+      if (profile?.hierarchy === 'employee') {
+        // Employee vê apenas suas próprias tarefas
+        filteredTasks = filteredTasks.filter(task =>
+          task.assignee_id === profile.id || task.created_by === profile.id
+        );
+
+        // Employee vê apenas clientes que ele é responsável
+        filteredClients = filteredClients.filter(client =>
+          client.responsible_id === profile.id
+        );
+      } else if (profile?.hierarchy === 'team_manager') {
+        // Team manager vê tarefas do seu time
+        const teamMemberIds = (profilesData || [])
+          .filter(p => p.team_id === profile.team_id)
+          .map(p => p.id);
+
+        filteredTasks = filteredTasks.filter(task =>
+          teamMemberIds.includes(task.assignee_id) ||
+          teamMemberIds.includes(task.created_by)
+        );
+
+        // Team manager vê clientes do seu time
+        filteredClients = filteredClients.filter(client =>
+          client.team_id === profile.team_id
+        );
+      }
+      // Admin vê todos
+
+      // Calcular estatísticas com dados filtrados
       setStats({
-        totalTasks: totalTasksCount || 0,
-        pendingTasks: pendingTasksCount || 0,
-        totalClients: totalClientsCount || 0,
-        completedTasks: completedTasksCount || 0,
+        totalTasks: filteredTasks.length,
+        pendingTasks: filteredTasks.filter(t => ['todo', 'in_progress'].includes(t.status)).length,
+        completedTasks: filteredTasks.filter(t => t.status === 'done').length,
+        totalClients: filteredClients.length,
       });
 
-      setRecentTasks(tasksData || []);
-      setRecentClients(clientsData || []);
+      setRecentTasks(filteredTasks.slice(0, 5));
+      setRecentClients(filteredClients.slice(0, 5));
     } catch (error: any) {
       // Only log errors that are not related to RLS recursion
       // (those are being fixed on the database side)
