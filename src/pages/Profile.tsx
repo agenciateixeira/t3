@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Upload, Lock, Globe, Bell, LogOut, Camera, Shield } from 'lucide-react';
+import { Loader2, User, Upload, Lock, Globe, Bell, LogOut, Camera, Shield, CreditCard, Phone } from 'lucide-react';
+import { isValidCPF, formatCPFInput, formatPhoneInput, onlyNumbers } from '@/utils/validators';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,8 @@ export default function Profile() {
 
   const [profileForm, setProfileForm] = useState({
     full_name: '',
+    phone: '',
+    cpf: '',
     avatar_url: '',
   });
 
@@ -70,6 +73,8 @@ export default function Profile() {
     if (profile) {
       const initialForm = {
         full_name: profile.full_name || '',
+        phone: profile.phone || '',
+        cpf: profile.cpf || '',
         avatar_url: profile.avatar_url || '',
       };
       setProfileForm(initialForm);
@@ -89,6 +94,8 @@ export default function Profile() {
       if (data) {
         setProfileForm({
           full_name: data.full_name || '',
+          phone: data.phone || '',
+          cpf: data.cpf || '',
           avatar_url: data.avatar_url || '',
         });
       }
@@ -244,10 +251,23 @@ export default function Profile() {
     setIsLoadingProfile(true);
 
     try {
+      // Validar CPF se fornecido
+      if (profileForm.cpf && !isValidCPF(profileForm.cpf)) {
+        toast({
+          variant: 'destructive',
+          title: 'CPF inválido',
+          description: 'Por favor, insira um CPF válido.',
+        });
+        setIsLoadingProfile(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: profileForm.full_name,
+          phone: profileForm.phone ? onlyNumbers(profileForm.phone) : null,
+          cpf: profileForm.cpf ? onlyNumbers(profileForm.cpf) : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user?.id);
@@ -479,6 +499,49 @@ export default function Profile() {
                       <p className="text-xs text-gray-500">
                         O e-mail não pode ser alterado
                       </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefone</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={profileForm.phone ? formatPhoneInput(profileForm.phone) : ''}
+                          onChange={(e) => {
+                            const formatted = formatPhoneInput(e.target.value);
+                            setProfileForm({ ...profileForm, phone: onlyNumbers(formatted) });
+                            setHasProfileChanges(true);
+                          }}
+                          placeholder="(11) 98765-4321"
+                          className="pl-10"
+                          maxLength={15}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF</Label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="cpf"
+                          type="text"
+                          value={profileForm.cpf ? formatCPFInput(profileForm.cpf) : ''}
+                          onChange={(e) => {
+                            const formatted = formatCPFInput(e.target.value);
+                            setProfileForm({ ...profileForm, cpf: onlyNumbers(formatted) });
+                            setHasProfileChanges(true);
+                          }}
+                          placeholder="000.000.000-00"
+                          className="pl-10"
+                          maxLength={14}
+                        />
+                        {profileForm.cpf && !isValidCPF(profileForm.cpf) && (
+                          <p className="text-xs text-destructive mt-1">CPF inválido</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2">

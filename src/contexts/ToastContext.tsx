@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
 type ToastVariant = 'default' | 'destructive'
 
@@ -17,19 +17,27 @@ interface ToastOptions {
   duration?: number
 }
 
+interface ToastContextType {
+  toasts: Toast[]
+  toast: (options: ToastOptions) => string
+  dismiss: (id: string) => void
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined)
+
 const toastTimeouts = new Map<string, NodeJS.Timeout>()
 
-export function useToast() {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const toast = useCallback((options: ToastOptions) => {
     const id = Math.random().toString(36).substring(7)
     const newToast: Toast = { id, ...options }
 
-    console.log('🔔 Toast created:', newToast)
+    console.log('🔔 Toast created (Context):', newToast)
     setToasts((prev) => {
       const updated = [...prev, newToast]
-      console.log('📋 Toasts state updated:', updated)
+      console.log('📋 Toasts state updated (Context):', updated)
       return updated
     })
 
@@ -54,5 +62,17 @@ export function useToast() {
     }
   }, [])
 
-  return { toast, toasts, dismiss }
+  return (
+    <ToastContext.Provider value={{ toasts, toast, dismiss }}>
+      {children}
+    </ToastContext.Provider>
+  )
+}
+
+export function useToastContext() {
+  const context = useContext(ToastContext)
+  if (!context) {
+    throw new Error('useToastContext must be used within ToastProvider')
+  }
+  return context
 }

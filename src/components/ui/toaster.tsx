@@ -5,6 +5,8 @@ import { X, CheckCircle2, AlertCircle, Info } from "lucide-react"
 export function Toaster() {
   const { toasts, dismiss } = useToast()
 
+  console.log('🎨 Toaster rendering, toasts count:', toasts.length, toasts)
+
   return (
     <div
       className="fixed z-[100] flex max-h-screen w-full flex-col-reverse gap-2 p-4 md:max-w-[420px]"
@@ -15,6 +17,7 @@ export function Toaster() {
       }}
     >
       {toasts.map(({ id, title, description, variant, ...props }) => {
+        console.log('🍞 Rendering toast:', { id, title, description, variant })
         const isDestructive = variant === "destructive"
         const isSuccess = !variant || variant === "default"
 

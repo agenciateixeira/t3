@@ -1,5 +1,5 @@
 export type UserRole = 'admin' | 'gerente' | 'designer' | 'social_media' | 'gestor_trafego';
-export type UserHierarchy = 'admin' | 'team_manager' | 'strategy' | 'traffic_manager' | 'social_media' | 'designer';
+export type UserHierarchy = 'admin' | 'team_manager' | 'employee';
 export type TaskStatus = 'todo' | 'in_progress' | 'in_review' | 'aprovado' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type PostStatus = 'draft' | 'scheduled' | 'published' | 'failed';
@@ -16,10 +16,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const USER_HIERARCHY_LABELS: Record<UserHierarchy, string> = {
   admin: 'Administrador',
   team_manager: 'Gerente de Time',
-  strategy: 'Estratégia',
-  traffic_manager: 'Gestor de Tráfego',
-  social_media: 'Social Media',
-  designer: 'Designer',
+  employee: 'Colaborador',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
@@ -57,6 +54,8 @@ export interface Profile {
   avatar_url: string | null;
   hierarchy?: UserHierarchy;
   team_id?: string | null;
+  phone?: string | null;
+  cpf?: string | null;
   created_at: string;
   updated_at: string;
 }

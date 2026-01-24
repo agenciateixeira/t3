@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users as UsersIcon, UserPlus, Mail, Phone, Pencil, Trash2, Search, X } from 'lucide-react';
+import { Users as UsersIcon, UserPlus, Mail, Phone, Pencil, Trash2, Search, X, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { isValidCPF, formatCPFInput, onlyNumbers } from '@/utils/validators';
 import {
   Dialog,
   DialogContent,
@@ -56,6 +57,7 @@ interface Employee {
   id: string;
   full_name: string;
   phone: string | null;
+  cpf: string | null;
   avatar_url: string | null;
   hierarchy: string | null;
   team_id: string | null;
@@ -67,11 +69,7 @@ interface Employee {
 const HIERARCHIES = [
   { value: 'admin', label: 'Administrador' },
   { value: 'team_manager', label: 'Gerente de Time' },
-  { value: 'strategy', label: 'Estratégia' },
-  { value: 'traffic_manager', label: 'Gestor de Tráfego' },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'designer', label: 'Designer' },
-  { value: 'audiovisual', label: 'Audiovisual' },
+  { value: 'employee', label: 'Colaborador' },
 ];
 
 export default function Employees() {
@@ -97,6 +95,7 @@ export default function Employees() {
     full_name: '',
     email: '',
     phone: '',
+    cpf: '',
     hierarchy: '',
     team_id: '',
   });
@@ -240,6 +239,17 @@ export default function Employees() {
         return;
       }
 
+      // Validar CPF
+      if (!employeeFormData.cpf || !isValidCPF(employeeFormData.cpf)) {
+        toast({
+          variant: 'destructive',
+          title: 'CPF inválido',
+          description: 'Por favor, insira um CPF válido.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // PASSO 1: Salvar sessão atual do admin ANTES de qualquer operação
       const { data: sessionData } = await supabase.auth.getSession();
       adminSession = sessionData.session;
@@ -258,7 +268,8 @@ export default function Employees() {
           emailRedirectTo: undefined,
           data: {
             full_name: employeeFormData.full_name,
-            phone: employeeFormData.phone,
+            phone: onlyNumbers(employeeFormData.phone),
+            cpf: onlyNumbers(employeeFormData.cpf),
             hierarchy: employeeFormData.hierarchy,
             team_id: employeeFormData.team_id || null,
           },
@@ -299,6 +310,7 @@ export default function Employees() {
         full_name: '',
         email: '',
         phone: '',
+        cpf: '',
         hierarchy: '',
         team_id: '',
       });
@@ -347,8 +359,21 @@ export default function Employees() {
     setIsSubmitting(true);
 
     try {
+      // Validar CPF se fornecido
+      if (editingEmployee.cpf && !isValidCPF(editingEmployee.cpf)) {
+        toast({
+          variant: 'destructive',
+          title: 'CPF inválido',
+          description: 'Por favor, insira um CPF válido.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const updateData = {
         full_name: editingEmployee.full_name,
+        phone: editingEmployee.phone ? onlyNumbers(editingEmployee.phone) : null,
+        cpf: editingEmployee.cpf ? onlyNumbers(editingEmployee.cpf) : null,
         hierarchy: editingEmployee.hierarchy,
         team_id: editingEmployee.team_id || null,
       };
@@ -639,6 +664,29 @@ export default function Employees() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="employee-cpf">CPF *</Label>
+                    <div className="relative">
+                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="employee-cpf"
+                        type="text"
+                        value={employeeFormData.cpf}
+                        onChange={(e) => {
+                          const formatted = formatCPFInput(e.target.value);
+                          setEmployeeFormData({ ...employeeFormData, cpf: formatted });
+                        }}
+                        placeholder="000.000.000-00"
+                        className="pl-10"
+                        maxLength={14}
+                        required
+                      />
+                      {employeeFormData.cpf && !isValidCPF(employeeFormData.cpf) && (
+                        <p className="text-xs text-destructive mt-1">CPF inválido</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="employee-hierarchy">Cargo/Hierarquia *</Label>
                     <Select
                       value={employeeFormData.hierarchy || ''}
@@ -740,6 +788,28 @@ export default function Employees() {
                           placeholder="(11) 98765-4321"
                           className="pl-10"
                         />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-employee-cpf">CPF</Label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="edit-employee-cpf"
+                          type="text"
+                          value={editingEmployee.cpf ? formatCPFInput(editingEmployee.cpf) : ''}
+                          onChange={(e) => {
+                            const formatted = formatCPFInput(e.target.value);
+                            setEditingEmployee({ ...editingEmployee, cpf: onlyNumbers(formatted) });
+                          }}
+                          placeholder="000.000.000-00"
+                          className="pl-10"
+                          maxLength={14}
+                        />
+                        {editingEmployee.cpf && !isValidCPF(editingEmployee.cpf) && (
+                          <p className="text-xs text-destructive mt-1">CPF inválido</p>
+                        )}
                       </div>
                     </div>
 
