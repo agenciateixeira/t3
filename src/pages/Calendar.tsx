@@ -685,11 +685,16 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleEventClick(event);
                               }}
-                              className="text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-200 text-purple-900 hover:shadow-md hover:scale-[1.02] hover:border-purple-300"
+                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
+                                event.deal?.card_color
+                                  ? 'border border-gray-200 text-gray-900 hover:shadow-sm'
+                                  : 'bg-purple-50 border border-purple-200 text-purple-900 hover:shadow-md hover:border-purple-300'
+                              }`}
+                              style={getCardColorStyle(event.deal?.card_color)}
                             >
                               <div className="font-semibold truncate">{event.title}</div>
                               {event.start_date && (
-                                <div className="text-[10px] mt-0.5 flex items-center gap-1 text-purple-700">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-75">
                                   <Clock className="h-2.5 w-2.5" />
                                   {format(parseISO(event.start_date), 'HH:mm')}
                                 </div>
@@ -777,11 +782,16 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 handleEventClick(event);
                               }}
-                              className="text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-200 text-purple-900 hover:shadow-md hover:scale-[1.02]"
+                              className={`text-xs px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
+                                event.deal?.card_color
+                                  ? 'border border-gray-200 text-gray-900 hover:shadow-sm'
+                                  : 'bg-purple-50 border border-purple-200 text-purple-900 hover:shadow-md'
+                              }`}
+                              style={getCardColorStyle(event.deal?.card_color)}
                             >
                               <div className="font-semibold truncate">{event.title}</div>
                               {event.start_date && (
-                                <div className="text-[10px] mt-0.5 flex items-center gap-1 text-purple-700">
+                                <div className="text-[10px] mt-0.5 flex items-center gap-1 opacity-75">
                                   <Clock className="h-2.5 w-2.5" />
                                   {format(parseISO(event.start_date), 'HH:mm')}
                                 </div>

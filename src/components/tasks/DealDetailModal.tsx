@@ -276,6 +276,78 @@ export default function DealDetailModal({
     onClose();
   };
 
+  const syncDealToCalendar = async (dealId: string, dealData: any) => {
+    // Só sincroniza se tiver pelo menos uma data definida
+    if (!dealData.start_date && !dealData.expected_close_date) {
+      return;
+    }
+
+    try {
+      // Verifica se já existe um evento de calendário para este deal
+      const { data: existingEvent, error: checkError } = await supabase
+        .from('calendar_events')
+        .select('id')
+        .eq('deal_id', dealId)
+        .single();
+
+      const eventTitle = `📊 ${dealData.title || deal?.title || 'Oportunidade'}`;
+      const eventDescription = dealData.description || deal?.description
+        ? `${dealData.description || deal?.description}\n\nOportunidade do Pipeline`
+        : 'Oportunidade do Pipeline';
+
+      // Combina data + hora para criar datetime completo
+      let startDateTime = dealData.start_date || deal?.start_date || dealData.expected_close_date || deal?.expected_close_date;
+      let endDateTime = dealData.expected_close_date || deal?.expected_close_date || dealData.start_date || deal?.start_date;
+
+      // Se tiver hora de início, concatena com a data
+      if ((dealData.start_time || deal?.start_time) && (dealData.start_date || deal?.start_date)) {
+        startDateTime = `${dealData.start_date || deal?.start_date}T${dealData.start_time || deal?.start_time}`;
+      } else if (dealData.start_date || deal?.start_date) {
+        // Se não tiver hora, usa 09:00 como padrão
+        startDateTime = `${dealData.start_date || deal?.start_date}T09:00:00`;
+      }
+
+      // Se tiver hora de fechamento, concatena com a data
+      if ((dealData.expected_close_time || deal?.expected_close_time) && (dealData.expected_close_date || deal?.expected_close_date)) {
+        endDateTime = `${dealData.expected_close_date || deal?.expected_close_date}T${dealData.expected_close_time || deal?.expected_close_time}`;
+      } else if (dealData.expected_close_date || deal?.expected_close_date) {
+        // Se não tiver hora, usa 18:00 como padrão
+        endDateTime = `${dealData.expected_close_date || deal?.expected_close_date}T18:00:00`;
+      }
+
+      const eventData = {
+        title: eventTitle,
+        description: eventDescription,
+        client_id: dealData.client_id || deal?.client_id || null,
+        deal_id: dealId,
+        start_date: startDateTime,
+        end_date: endDateTime,
+        all_day: false,
+        created_by: user?.id || null,
+      };
+
+      if (existingEvent) {
+        // Atualiza evento existente
+        const { error: updateError } = await supabase
+          .from('calendar_events')
+          .update(eventData)
+          .eq('id', existingEvent.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Cria novo evento
+        const { error: insertError } = await supabase
+          .from('calendar_events')
+          .insert([eventData]);
+
+        if (insertError) throw insertError;
+      }
+    } catch (error) {
+      console.error('Erro ao sincronizar com calendário:', error);
+      // Não bloqueia a operação principal se a sincronização falhar
+    }
+  };
+
   const handleSave = async (field: string, value: any) => {
     if (!dealId) return;
 
@@ -289,6 +361,12 @@ export default function DealDetailModal({
         .eq('id', dealId);
 
       if (error) throw error;
+
+      // Sincronizar com calendário se for um campo de data/hora
+      const dateTimeFields = ['start_date', 'start_time', 'expected_close_date', 'expected_close_time', 'title', 'description', 'client_id'];
+      if (dateTimeFields.includes(field)) {
+        await syncDealToCalendar(dealId, { ...deal, [field]: value });
+      }
 
       // Personalizar mensagem de atividade baseada no campo
       let activityTitle = '';
