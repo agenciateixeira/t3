@@ -271,9 +271,9 @@ export default function Chat() {
       fetchMessages(selectedConversation);
 
       // Setup presence channel for typing/recording indicators
-      const presenceChannel = supabase.channel(`presence:${selectedConversation.id}`, {
-        config: { presence: { key: user?.id } },
-      });
+      // IMPORTANTE: Não usar key: user?.id - isso faz cada usuário ter seu próprio estado
+      // Queremos todos na mesma sala de presence
+      const presenceChannel = supabase.channel(`presence:${selectedConversation.id}`);
 
       // Store reference for use in sendTypingIndicator and sendRecordingIndicator
       presenceChannelRef.current = presenceChannel;
@@ -313,9 +313,10 @@ export default function Chat() {
     }
   }, [selectedConversation, user?.id]);
 
-  // Scroll apenas quando EU envio mensagem (optimisticMessages) ou quando abro conversa
+  // Scroll apenas quando EU envio mensagem ou quando abro conversa
   // NÃO scroll quando outras pessoas enviam
   const previousMessagesLengthRef = useRef(0);
+  const isScrollingFromSendRef = useRef(false);
 
   useEffect(() => {
     const currentLength = messages.length + optimisticMessages.length;
@@ -324,12 +325,19 @@ export default function Chat() {
     // Scroll apenas se:
     // 1. Tem optimistic messages (eu estou enviando)
     // 2. Ou é a primeira carga de mensagens (previousLength === 0)
-    if (optimisticMessages.length > 0 || previousLength === 0) {
+    // 3. Ou a última mensagem é minha
+    const shouldScroll =
+      optimisticMessages.length > 0 ||
+      previousLength === 0 ||
+      isScrollingFromSendRef.current;
+
+    if (shouldScroll) {
       scrollToBottom();
+      isScrollingFromSendRef.current = false;
     }
 
     previousMessagesLengthRef.current = currentLength;
-  }, [messages, optimisticMessages]);
+  }, [messages, optimisticMessages, user?.id]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -683,6 +691,9 @@ export default function Chat() {
 
       // Remove from optimistic messages after successful send
       setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+
+      // Mark that we should scroll after the next message update
+      isScrollingFromSendRef.current = true;
 
       // Immediately fetch messages to ensure they appear without waiting for realtime
       if (selectedConversation) {
