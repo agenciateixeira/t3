@@ -385,6 +385,27 @@ export default function Employees() {
       // PASSO 5: Aguardar um pouco para a sessão se estabilizar
       await new Promise(resolve => setTimeout(resolve, 100));
 
+      // PASSO 6: Atualizar/Garantir que os dados estão corretos na tabela profiles
+      if (authData && authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            email: employeeFormData.email,
+            phone: onlyNumbers(employeeFormData.phone),
+            cpf: onlyNumbers(employeeFormData.cpf),
+            hierarchy: employeeFormData.hierarchy,
+            job_title_id: employeeFormData.job_title_id || null,
+            team_id: employeeFormData.team_id || null,
+            full_name: employeeFormData.full_name,
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          console.error('Erro ao atualizar perfil:', profileError);
+          // Não lançar erro aqui, apenas logar - o usuário foi criado
+        }
+      }
+
       toast({
         title: 'Colaborador cadastrado!',
         description: `Cadastro criado. Envie as credenciais para ${employeeFormData.email}`,

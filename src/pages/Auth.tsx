@@ -246,17 +246,17 @@ export default function Auth() {
         const maskedEmailAddress = maskEmail(emailData);
 
         setToastMessage({
-          variant: 'destructive',
-          title: 'Conta já existe',
-          description: `Este CPF já possui uma conta vinculada ao email ${maskedEmailAddress}. Use a opção "Entrar".`,
+          variant: 'default',
+          title: 'Conta encontrada!',
+          description: `Este CPF já possui uma conta vinculada ao email ${maskedEmailAddress}. Esqueceu sua senha? Use "Esqueci minha senha" na tela de login.`,
         });
         setIsLoading(false);
 
-        // Mudar para aba de login após 1 segundo
+        // Mudar para aba de login após 2 segundos
         setTimeout(() => {
           setActiveTab('login');
           setLoginData({ ...loginData, identifier: signupData.cpf });
-        }, 1000);
+        }, 2000);
         return;
       }
 
@@ -553,6 +553,17 @@ export default function Auth() {
                   'Entrar'
                 )}
               </Button>
+
+              {/* Esqueci minha senha */}
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-sm text-[#2db4af] hover:text-[#28a39e] font-medium transition-colors"
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
             </form>
           ) : signupStep === 'cpf' ? (
             <form onSubmit={handleCPFSubmit} className="space-y-5">
