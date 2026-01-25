@@ -68,7 +68,7 @@ BEGIN
     p.full_name,
     p.cpf,
     p.phone,
-    p.hierarchy,
+    p.hierarchy::TEXT,
     p.avatar_url,
     p.created_at,
     p.updated_at
