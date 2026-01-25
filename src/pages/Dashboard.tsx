@@ -6,6 +6,7 @@ import Layout from '@/components/Layout';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { TaskItem } from '@/components/dashboard/TaskItem';
 import { ClientItem } from '@/components/dashboard/ClientItem';
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -158,6 +159,13 @@ export default function Dashboard() {
             variant="success"
           />
         </div>
+
+        {/* Revenue Chart - Apenas para Admins */}
+        {profile?.hierarchy === 'admin' && (
+          <div className="mb-6 sm:mb-8">
+            <RevenueChart />
+          </div>
+        )}
 
         {/* Content Grid */}
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
