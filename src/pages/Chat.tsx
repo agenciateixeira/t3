@@ -112,6 +112,9 @@ export default function Chat() {
   const audioChunksRef = useRef<Blob[]>([]);
   const selectedConversationRef = useRef<Conversation | null>(null);
 
+  // Get query params for opening specific conversation
+  const [searchParams, setSearchParams] = useState<URLSearchParams>(new URLSearchParams(window.location.search));
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,29 +167,81 @@ export default function Chat() {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [recordingUsers, setRecordingUsers] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const presenceChannelRef = useRef<any | null>(null);
+
+  // Handle opening conversation from URL params
+  useEffect(() => {
+    if (conversations.length > 0) {
+      const conversationId = searchParams.get('conversation');
+      const userId = searchParams.get('user');
+
+      if (conversationId) {
+        // Find and open group conversation
+        const conv = conversations.find(c => c.id === conversationId);
+        if (conv) {
+          setSelectedConversation(conv);
+          // Clear query param after opening
+          window.history.replaceState({}, '', '/chat');
+        }
+      } else if (userId) {
+        // Find and open DM conversation
+        const conv = conversations.find(c => c.type === 'direct' && c.id === userId);
+        if (conv) {
+          setSelectedConversation(conv);
+          // Clear query param after opening
+          window.history.replaceState({}, '', '/chat');
+        }
+      }
+    }
+  }, [conversations, searchParams]);
 
   useEffect(() => {
     fetchConversations();
     fetchProfiles();
 
-    // Real-time subscription
+    // Real-time subscription para mensagens
+    // Escutar TODAS as mensagens e filtrar no callback
     const channel = supabase
       .channel('messages-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'messages',
         },
-        () => {
-          fetchConversations();
-          if (selectedConversationRef.current) {
-            fetchMessages(selectedConversationRef.current);
+        (payload) => {
+          console.log('Nova mensagem recebida (realtime):', payload);
+          const newMessage = payload.new as any;
+
+          // Verificar se a mensagem é relevante para o usuário atual
+          const isRelevant =
+            newMessage.recipient_id === user?.id || // DM recebida
+            newMessage.sender_id === user?.id || // Mensagem enviada por mim
+            newMessage.group_id; // Mensagem em grupo (verificar se sou membro será feito no fetch)
+
+          if (isRelevant) {
+            // Atualizar lista de conversas
+            fetchConversations();
+
+            // Se a mensagem é da conversa atualmente selecionada, atualizar mensagens
+            if (selectedConversationRef.current) {
+              const currentConv = selectedConversationRef.current;
+              const isCurrentConversation =
+                (currentConv.type === 'direct' &&
+                  (newMessage.sender_id === currentConv.id || newMessage.recipient_id === currentConv.id)) ||
+                (currentConv.type === 'group' && newMessage.group_id === currentConv.id);
+
+              if (isCurrentConversation) {
+                fetchMessages(currentConv);
+              }
+            }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Status da subscription de mensagens:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -220,6 +275,9 @@ export default function Chat() {
         config: { presence: { key: user?.id } },
       });
 
+      // Store reference for use in sendTypingIndicator and sendRecordingIndicator
+      presenceChannelRef.current = presenceChannel;
+
       presenceChannel
         .on('presence', { event: 'sync' }, () => {
           const state = presenceChannel.presenceState();
@@ -241,6 +299,7 @@ export default function Chat() {
         .subscribe();
 
       return () => {
+        presenceChannelRef.current = null;
         supabase.removeChannel(presenceChannel);
       };
     }
@@ -898,25 +957,31 @@ export default function Chat() {
   };
 
   const sendTypingIndicator = async (isTyping: boolean) => {
-    if (!selectedConversation || !user) return;
+    if (!selectedConversation || !user || !presenceChannelRef.current) return;
 
-    const channel = supabase.channel(`presence:${selectedConversation.id}`);
-    await channel.track({
-      user_id: user.id,
-      typing: isTyping,
-      recording: false,
-    });
+    try {
+      await presenceChannelRef.current.track({
+        user_id: user.id,
+        typing: isTyping,
+        recording: false,
+      });
+    } catch (error) {
+      console.error('Error sending typing indicator:', error);
+    }
   };
 
   const sendRecordingIndicator = async (isRecording: boolean) => {
-    if (!selectedConversation || !user) return;
+    if (!selectedConversation || !user || !presenceChannelRef.current) return;
 
-    const channel = supabase.channel(`presence:${selectedConversation.id}`);
-    await channel.track({
-      user_id: user.id,
-      typing: false,
-      recording: isRecording,
-    });
+    try {
+      await presenceChannelRef.current.track({
+        user_id: user.id,
+        typing: false,
+        recording: isRecording,
+      });
+    } catch (error) {
+      console.error('Error sending recording indicator:', error);
+    }
   };
 
   const handleTyping = () => {

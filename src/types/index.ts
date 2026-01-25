@@ -534,8 +534,8 @@ export interface TimeStats {
 // NOTIFICATIONS TYPES
 // ============================================
 
-export type NotificationType = 'task' | 'event' | 'deal' | 'assignment' | 'reminder' | 'system';
-export type NotificationReferenceType = 'task' | 'event' | 'deal';
+export type NotificationType = 'task' | 'event' | 'deal' | 'assignment' | 'reminder' | 'system' | 'message';
+export type NotificationReferenceType = 'task' | 'event' | 'deal' | 'message';
 
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   task: 'Tarefa',
@@ -544,6 +544,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   assignment: 'Atribuição',
   reminder: 'Lembrete',
   system: 'Sistema',
+  message: 'Mensagem',
 };
 
 export interface Notification {
@@ -554,6 +555,11 @@ export interface Notification {
   type: NotificationType;
   reference_id: string | null;
   reference_type: NotificationReferenceType | null;
+  metadata?: {
+    group_id?: string;
+    sender_id?: string;
+    type?: 'dm' | 'group' | 'group_mention';
+  } | null;
   is_read: boolean;
   created_at: string;
   read_at: string | null;

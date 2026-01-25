@@ -28,6 +28,7 @@ import {
   AlertCircle,
   Settings,
   ExternalLink,
+  MessageSquare,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -206,6 +207,20 @@ export default function NotificationCenter() {
         case 'event':
           navigate('/calendar');
           break;
+        case 'message':
+          // Para mensagens, usar metadata para navegar para a conversa correta
+          const metadata = selectedNotification.metadata;
+          if (metadata?.group_id) {
+            // Mensagem em grupo - navegar para o grupo
+            navigate(`/chat?conversation=${metadata.group_id}`);
+          } else if (metadata?.sender_id) {
+            // Mensagem direta - navegar para o DM com o remetente
+            navigate(`/chat?user=${metadata.sender_id}`);
+          } else {
+            // Fallback - apenas abrir o chat
+            navigate('/chat');
+          }
+          break;
       }
     }
 
@@ -224,6 +239,8 @@ export default function NotificationCenter() {
         return <UserPlus className="h-4 w-4" />;
       case 'reminder':
         return <Clock className="h-4 w-4" />;
+      case 'message':
+        return <MessageSquare className="h-4 w-4" />;
       case 'system':
         return <Settings className="h-4 w-4" />;
       default:
@@ -243,6 +260,8 @@ export default function NotificationCenter() {
         return 'text-[#2db4af] bg-[#2db4af]/10';
       case 'reminder':
         return 'text-amber-600 bg-amber-50';
+      case 'message':
+        return 'text-indigo-600 bg-indigo-50';
       case 'system':
         return 'text-gray-600 bg-gray-50';
       default:
@@ -421,6 +440,7 @@ export default function NotificationCenter() {
                     {selectedNotification.reference_type === 'task' && 'Tarefa'}
                     {selectedNotification.reference_type === 'deal' && 'Negócio'}
                     {selectedNotification.reference_type === 'event' && 'Evento'}
+                    {selectedNotification.reference_type === 'message' && 'Mensagem'}
                   </div>
                 )}
               </div>
