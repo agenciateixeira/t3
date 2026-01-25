@@ -2,6 +2,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 Deno.serve(async (req) => {
   try {
+    // Verificar token de segurança (proteção contra chamadas não autorizadas)
+    const authHeader = req.headers.get('Authorization');
+    const cronSecret = Deno.env.get('CRON_SECRET') || 'your-secret-key-here';
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Criar cliente Supabase com service role key (para bypasser RLS)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
