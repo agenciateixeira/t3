@@ -17,6 +17,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import NotFound from '@/pages/NotFound';
 import ActiveTimers from '@/pages/ActiveTimers';
+import Reports from '@/pages/Reports';
 
 function App() {
   return (
@@ -107,6 +108,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ActiveTimers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
               </ProtectedRoute>
             }
           />

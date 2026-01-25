@@ -11,10 +11,18 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, subYears, startOfQuarter, endOfQuarter, subQuarters } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { exportRevenueReportToPDF } from '@/lib/exportUtils';
+import * as XLSX from 'xlsx';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type FilterType = 'month' | 'quarter' | 'year';
 
@@ -232,6 +240,40 @@ export function RevenueChart() {
     }
   };
 
+  const handleExportExcel = () => {
+    const data = chartData.map((item) => ({
+      'Período': item.label,
+      'Atual': item.current,
+      'Anterior': item.previous,
+      'Diferença': item.current - item.previous,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Faturamento');
+
+    const colWidths = [
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+    ];
+    ws['!cols'] = colWidths;
+
+    const fileName = `faturamento_${filter}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const handleExportPDF = () => {
+    exportRevenueReportToPDF(
+      chartData,
+      currentTotal,
+      previousTotal,
+      growthPercentage,
+      `${getFilterLabel()} vs ${getComparisonLabel()}`
+    );
+  };
+
   return (
     <Card className="col-span-full">
       <CardHeader>
@@ -271,6 +313,26 @@ export function RevenueChart() {
             >
               Ano
             </Button>
+
+            {/* Export Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-green-600" />
+                  Exportar Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  <FileText className="h-4 w-4 mr-2 text-red-600" />
+                  Exportar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

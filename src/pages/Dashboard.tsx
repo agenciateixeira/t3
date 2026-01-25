@@ -7,6 +7,13 @@ import { MetricCard } from '@/components/dashboard/MetricCard';
 import { TaskItem } from '@/components/dashboard/TaskItem';
 import { ClientItem } from '@/components/dashboard/ClientItem';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
+import { ActiveTimersCard } from '@/components/dashboard/ActiveTimersCard';
+import { AlertsCard } from '@/components/dashboard/AlertsCard';
+import { TopPerformersCard } from '@/components/dashboard/TopPerformersCard';
+import { PipelineCard } from '@/components/dashboard/PipelineCard';
+import { MyTimerCard } from '@/components/dashboard/MyTimerCard';
+import { MyTasksTodayCard } from '@/components/dashboard/MyTasksTodayCard';
+import { MyDealsCard } from '@/components/dashboard/MyDealsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -160,14 +167,36 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Revenue Chart - Apenas para Admins */}
-        {profile?.hierarchy === 'admin' && (
-          <div className="mb-6 sm:mb-8">
-            <RevenueChart />
+        {/* Admin Dashboard */}
+        {profile?.hierarchy === 'admin' ? (
+          <>
+            {/* Revenue Chart */}
+            <div className="mb-6 sm:mb-8">
+              <RevenueChart />
+            </div>
+
+            {/* Admin Command Center */}
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 mb-6 sm:mb-8">
+              <ActiveTimersCard />
+              <AlertsCard />
+              <TopPerformersCard />
+            </div>
+
+            {/* Pipeline Overview */}
+            <div className="mb-6 sm:mb-8">
+              <PipelineCard />
+            </div>
+          </>
+        ) : (
+          /* Team Dashboard */
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 mb-6 sm:mb-8">
+            <MyTimerCard />
+            <MyTasksTodayCard />
+            <MyDealsCard />
           </div>
         )}
 
-        {/* Content Grid */}
+        {/* Content Grid (para todos os usuários) */}
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
           {/* Recent Tasks */}
           <Card>

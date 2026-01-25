@@ -27,6 +27,7 @@ import {
   Clock,
   Search,
   X,
+  FileBarChart,
 } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
@@ -85,7 +86,10 @@ export default function Layout({ children }: LayoutProps) {
         { id: 'profile', name: 'Perfil', path: '/profile', keywords: ['perfil', 'meu perfil', 'conta', 'usuario'] },
         { id: 'settings', name: 'Configurações', path: '/settings', keywords: ['configuracoes', 'settings', 'ajustes'] },
         ...(profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager'
-          ? [{ id: 'active-timers', name: 'Timers Ativos', path: '/active-timers', keywords: ['timers', 'cronometros', 'tempo'] }]
+          ? [
+              { id: 'active-timers', name: 'Timers Ativos', path: '/active-timers', keywords: ['timers', 'cronometros', 'tempo'] },
+              { id: 'reports', name: 'Relatórios', path: '/reports', keywords: ['relatorios', 'reports', 'analytics', 'metricas', 'performance'] }
+            ]
           : []),
       ];
 
@@ -245,11 +249,14 @@ export default function Layout({ children }: LayoutProps) {
     { name: 'Chat', href: '/chat', icon: MessageCircle },
   ];
 
-  // Adicionar "Timers Ativos" apenas para admins e gerentes
+  // Adicionar itens específicos para admins e gerentes
   const navigation = [
     ...baseNavigation,
     ...(profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager'
-      ? [{ name: 'Timers Ativos', href: '/active-timers', icon: Clock }]
+      ? [
+          { name: 'Timers Ativos', href: '/active-timers', icon: Clock },
+          { name: 'Relatórios', href: '/reports', icon: FileBarChart },
+        ]
       : []),
   ];
 
