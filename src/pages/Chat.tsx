@@ -1206,7 +1206,7 @@ export default function Chat() {
           <>
           <div className={`${!selectedConversation ? 'hidden lg:flex' : 'flex'} ${selectedThread ? 'hidden lg:flex' : 'flex'} flex-1 flex-col lg:h-[calc(100vh-64px)]`} style={{ overflow: 'hidden', minWidth: 0 }}>
             {/* Chat Header - Fixed */}
-            <div className="bg-[#f0f2f5] border-b border-gray-300 flex-shrink-0 lg:pt-16">
+            <div className="bg-[#f0f2f5] border-b border-gray-300 flex-shrink-0">
               <div className="px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
