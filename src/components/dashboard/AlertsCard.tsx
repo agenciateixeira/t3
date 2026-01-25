@@ -86,19 +86,21 @@ export function AlertsCard() {
           title,
           updated_at,
           value,
-          stage:pipeline_stages(name),
+          stage:pipeline_stages(name, stage_type),
           client:clients(name)
         `)
         .lt('updated_at', sevenDaysAgo.toISOString())
-        .neq('stage_id', 'won')
-        .neq('stage_id', 'lost')
-        .order('updated_at', { ascending: true })
-        .limit(10);
+        .order('updated_at', { ascending: true });
 
       if (dealsError) throw dealsError;
 
+      // Filtrar deals que não estão ganhos ou perdidos
+      const filteredDeals = dealsData?.filter(
+        deal => deal.stage?.stage_type !== 'won' && deal.stage?.stage_type !== 'lost'
+      ).slice(0, 10) || [];
+
       setOverdueTasks(tasksData || []);
-      setStaleDeals(dealsData || []);
+      setStaleDeals(filteredDeals);
     } catch (error) {
       console.error('Erro ao buscar alertas:', error);
     } finally {

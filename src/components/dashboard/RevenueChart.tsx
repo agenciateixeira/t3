@@ -113,20 +113,22 @@ export function RevenueChart() {
     previousEnd: Date
   ): Promise<RevenueData[]> => {
     // Buscar deals ganhos no período atual
-    const { data: currentDeals } = await supabase
+    const { data: currentDealsAll } = await supabase
       .from('deals')
-      .select('value, expected_close_date')
-      .eq('stage_id', 'won') // Assumindo que existe uma etapa "won"
+      .select('value, expected_close_date, stage:pipeline_stages(stage_type)')
       .gte('expected_close_date', currentStart.toISOString())
       .lte('expected_close_date', currentEnd.toISOString());
 
     // Buscar deals ganhos no período anterior
-    const { data: previousDeals } = await supabase
+    const { data: previousDealsAll } = await supabase
       .from('deals')
-      .select('value, expected_close_date')
-      .eq('stage_id', 'won')
+      .select('value, expected_close_date, stage:pipeline_stages(stage_type)')
       .gte('expected_close_date', previousStart.toISOString())
       .lte('expected_close_date', previousEnd.toISOString());
+
+    // Filtrar apenas deals ganhos
+    const currentDeals = currentDealsAll?.filter(d => d.stage?.stage_type === 'won');
+    const previousDeals = previousDealsAll?.filter(d => d.stage?.stage_type === 'won');
 
     // Agrupar por dia
     const days: RevenueData[] = [];
@@ -160,20 +162,22 @@ export function RevenueChart() {
     previousEnd: Date
   ): Promise<RevenueData[]> => {
     // Buscar deals ganhos no período atual
-    const { data: currentDeals } = await supabase
+    const { data: currentDealsAll } = await supabase
       .from('deals')
-      .select('value, expected_close_date')
-      .eq('stage_id', 'won')
+      .select('value, expected_close_date, stage:pipeline_stages(stage_type)')
       .gte('expected_close_date', currentStart.toISOString())
       .lte('expected_close_date', currentEnd.toISOString());
 
     // Buscar deals ganhos no período anterior
-    const { data: previousDeals } = await supabase
+    const { data: previousDealsAll } = await supabase
       .from('deals')
-      .select('value, expected_close_date')
-      .eq('stage_id', 'won')
+      .select('value, expected_close_date, stage:pipeline_stages(stage_type)')
       .gte('expected_close_date', previousStart.toISOString())
       .lte('expected_close_date', previousEnd.toISOString());
+
+    // Filtrar apenas deals ganhos
+    const currentDeals = currentDealsAll?.filter(d => d.stage?.stage_type === 'won');
+    const previousDeals = previousDealsAll?.filter(d => d.stage?.stage_type === 'won');
 
     // Agrupar por mês
     const months: RevenueData[] = [];
