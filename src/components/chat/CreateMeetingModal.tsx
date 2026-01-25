@@ -285,7 +285,7 @@ Participantes: ${participantNames}`;
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                <PopoverContent className="w-auto p-0" align="start" style={{ zIndex: 99999 }}>
                   <Calendar
                     mode="single"
                     selected={formData.meeting_date}
