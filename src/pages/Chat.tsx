@@ -284,8 +284,11 @@ export default function Chat() {
           const typing = new Set<string>();
           const recording = new Set<string>();
 
+          console.log('Presence state:', state);
+
           Object.values(state).forEach((presences: any) => {
             presences.forEach((presence: any) => {
+              console.log('Presence:', presence);
               if (presence.user_id !== user?.id) {
                 if (presence.typing) typing.add(presence.user_id);
                 if (presence.recording) recording.add(presence.user_id);
@@ -293,10 +296,15 @@ export default function Chat() {
             });
           });
 
+          console.log('Typing users:', Array.from(typing));
+          console.log('Recording users:', Array.from(recording));
+
           setTypingUsers(typing);
           setRecordingUsers(recording);
         })
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Presence channel status:', status);
+        });
 
       return () => {
         presenceChannelRef.current = null;
@@ -305,8 +313,22 @@ export default function Chat() {
     }
   }, [selectedConversation, user?.id]);
 
+  // Scroll apenas quando EU envio mensagem (optimisticMessages) ou quando abro conversa
+  // NÃO scroll quando outras pessoas enviam
+  const previousMessagesLengthRef = useRef(0);
+
   useEffect(() => {
-    scrollToBottom();
+    const currentLength = messages.length + optimisticMessages.length;
+    const previousLength = previousMessagesLengthRef.current;
+
+    // Scroll apenas se:
+    // 1. Tem optimistic messages (eu estou enviando)
+    // 2. Ou é a primeira carga de mensagens (previousLength === 0)
+    if (optimisticMessages.length > 0 || previousLength === 0) {
+      scrollToBottom();
+    }
+
+    previousMessagesLengthRef.current = currentLength;
   }, [messages, optimisticMessages]);
 
   useEffect(() => {
@@ -960,11 +982,13 @@ export default function Chat() {
     if (!selectedConversation || !user || !presenceChannelRef.current) return;
 
     try {
+      console.log('Sending typing indicator:', isTyping);
       await presenceChannelRef.current.track({
         user_id: user.id,
         typing: isTyping,
         recording: false,
       });
+      console.log('Typing indicator sent successfully');
     } catch (error) {
       console.error('Error sending typing indicator:', error);
     }
