@@ -160,12 +160,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ============================================================================
 -- TRIGGER PARA CRIAR NOTIFICAÇÕES AUTOMATICAMENTE
 -- ============================================================================
-DROP TRIGGER IF EXISTS trigger_create_message_notification ON messages;
+-- IMPORTANTE: Este trigger JÁ EXISTE na tabela messages
+-- Vamos apenas SUBSTITUIR a função, não criar o trigger novamente
+-- O trigger já está criado e chama create_message_notification()
 
-CREATE TRIGGER trigger_create_message_notification
-  AFTER INSERT ON messages
-  FOR EACH ROW
-  EXECUTE FUNCTION create_message_notification();
+-- Não precisa criar o trigger, ele já existe!
 
 COMMENT ON FUNCTION create_message_notification IS
 'Cria notificações automaticamente quando mensagens são enviadas.
