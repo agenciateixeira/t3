@@ -334,31 +334,25 @@ export default function Chat() {
     }
   }, [selectedConversation, user?.id]);
 
-  // Scroll apenas quando EU envio mensagem ou quando abro conversa
-  // NÃO scroll quando outras pessoas enviam
-  const previousMessagesLengthRef = useRef(0);
-  const isScrollingFromSendRef = useRef(false);
-
+  // Auto-scroll: apenas quando primeira carga ou quando EU envio mensagem
   useEffect(() => {
-    const currentLength = messages.length + optimisticMessages.length;
-    const previousLength = previousMessagesLengthRef.current;
+    // Apenas scroll automático se:
+    // 1. Tenho optimistic messages (estou enviando)
+    // 2. Ou lista de mensagens estava vazia antes (primeira carga)
+    const isFirstLoad = messages.length > 0 && !previousMessagesLengthRef.current;
+    const isSendingMessage = optimisticMessages.length > 0;
 
-    // Scroll apenas se:
-    // 1. Tem optimistic messages (eu estou enviando)
-    // 2. Ou é a primeira carga de mensagens (previousLength === 0)
-    // 3. Ou a última mensagem é minha
-    const shouldScroll =
-      optimisticMessages.length > 0 ||
-      previousLength === 0 ||
-      isScrollingFromSendRef.current;
-
-    if (shouldScroll) {
+    if (isFirstLoad || isSendingMessage) {
       scrollToBottom();
-      isScrollingFromSendRef.current = false;
     }
 
-    previousMessagesLengthRef.current = currentLength;
-  }, [messages, optimisticMessages, user?.id]);
+    // Atualizar referência
+    if (messages.length > 0) {
+      previousMessagesLengthRef.current = messages.length;
+    }
+  }, [messages, optimisticMessages]);
+
+  const previousMessagesLengthRef = useRef(0);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -713,14 +707,8 @@ export default function Chat() {
       // Remove from optimistic messages after successful send
       setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
 
-      // Mark that we should scroll after the next message update
-      isScrollingFromSendRef.current = true;
-
-      // Immediately fetch messages to ensure they appear without waiting for realtime
-      if (selectedConversation) {
-        await fetchMessages(selectedConversation);
-        fetchConversations(); // Update conversation list with latest message
-      }
+      // Atualizar conversas mas NÃO refetch messages (realtime vai fazer isso)
+      fetchConversations();
     } catch (error: any) {
       // Remove failed optimistic message
       setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
