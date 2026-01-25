@@ -246,11 +246,36 @@ export default function Auth() {
         // Buscar dados do colaborador pelo CPF
         const employee = await getPreRegisteredEmployee(signupData.cpf);
 
+        console.log('Employee data:', employee);
+        console.log('Email from RPC:', emailData);
+
         if (!employee) {
+          // Se não encontrou pelo CPF, tentar buscar pelo email
+          const { data: profileByEmail } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', emailData)
+            .maybeSingle();
+
+          console.log('Profile by email:', profileByEmail);
+
+          if (!profileByEmail) {
+            setToastMessage({
+              variant: 'destructive',
+              title: 'Erro',
+              description: 'Não foi possível encontrar os dados do colaborador. Entre em contato com o administrador.',
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          // Usar dados do perfil encontrado pelo email
+          setEmployeeData({ ...profileByEmail, email: emailData });
+          setSignupStep('reset-password');
           setToastMessage({
-            variant: 'destructive',
-            title: 'Erro',
-            description: 'Não foi possível encontrar os dados do colaborador.',
+            variant: 'default',
+            title: 'Primeiro acesso',
+            description: `Olá, ${profileByEmail.full_name}! Este CPF já possui cadastro. Defina sua nova senha de acesso.`,
           });
           setIsLoading(false);
           return;
