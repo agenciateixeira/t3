@@ -250,16 +250,13 @@ export default function Auth() {
         console.log('Email from RPC:', emailData);
 
         if (!employee) {
-          // Se não encontrou pelo CPF, tentar buscar pelo email
-          const { data: profileByEmail } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', emailData)
-            .maybeSingle();
+          // Se não encontrou pelo CPF, buscar pelo ID do usuário no auth
+          // Primeiro, buscar o user_id pelo email
+          const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserByEmail(emailData);
 
-          console.log('Profile by email:', profileByEmail);
+          console.log('Auth user:', authUser);
 
-          if (!profileByEmail) {
+          if (authError || !authUser) {
             setToastMessage({
               variant: 'destructive',
               title: 'Erro',
@@ -269,13 +266,40 @@ export default function Auth() {
             return;
           }
 
-          // Usar dados do perfil encontrado pelo email
-          setEmployeeData({ ...profileByEmail, email: emailData });
+          // Buscar perfil pelo ID do usuário
+          const { data: profileById, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authUser.id)
+            .maybeSingle();
+
+          console.log('Profile by ID:', profileById);
+
+          if (!profileById) {
+            setToastMessage({
+              variant: 'destructive',
+              title: 'Erro',
+              description: 'Não foi possível encontrar os dados do colaborador. Entre em contato com o administrador.',
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          // Atualizar o CPF no perfil se não estiver salvo
+          if (!profileById.cpf) {
+            await supabase
+              .from('profiles')
+              .update({ cpf: cleanCPF })
+              .eq('id', authUser.id);
+          }
+
+          // Usar dados do perfil encontrado
+          setEmployeeData({ ...profileById, email: emailData });
           setSignupStep('reset-password');
           setToastMessage({
             variant: 'default',
             title: 'Primeiro acesso',
-            description: `Olá, ${profileByEmail.full_name}! Este CPF já possui cadastro. Defina sua nova senha de acesso.`,
+            description: `Olá, ${profileById.full_name}! Este CPF já possui cadastro. Defina sua nova senha de acesso.`,
           });
           setIsLoading(false);
           return;
