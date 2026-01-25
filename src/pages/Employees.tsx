@@ -106,6 +106,12 @@ export default function Employees() {
   // Controle de permissões
   const hasPermission = profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager';
   const canManageEmployees = profile?.hierarchy === 'admin';
+  const isAdmin = profile?.hierarchy === 'admin';
+
+  // Filtrar hierarquias disponíveis: apenas ADMs podem criar ADMs
+  const availableHierarchies = isAdmin
+    ? HIERARCHIES
+    : HIERARCHIES.filter(h => h.value !== 'admin');
 
   const [teamFormData, setTeamFormData] = useState({
     name: '',
@@ -322,6 +328,17 @@ export default function Employees() {
         return;
       }
 
+      // Validar permissão para criar administrador
+      if (employeeFormData.hierarchy === 'admin' && !isAdmin) {
+        toast({
+          variant: 'destructive',
+          title: 'Sem permissão',
+          description: 'Apenas administradores podem criar outros administradores.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Validar CPF
       if (!employeeFormData.cpf || !isValidCPF(employeeFormData.cpf)) {
         toast({
@@ -481,6 +498,17 @@ export default function Employees() {
           variant: 'destructive',
           title: 'CPF inválido',
           description: 'Por favor, insira um CPF válido.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validar permissão para editar para administrador
+      if (editingEmployee.hierarchy === 'admin' && !isAdmin) {
+        toast({
+          variant: 'destructive',
+          title: 'Sem permissão',
+          description: 'Apenas administradores podem definir outros como administradores.',
         });
         setIsSubmitting(false);
         return;
@@ -830,13 +858,18 @@ export default function Employees() {
                         <SelectValue placeholder="Selecione o cargo" />
                       </SelectTrigger>
                       <SelectContent className="z-[10002]">
-                        {HIERARCHIES.map((hierarchy) => (
+                        {availableHierarchies.map((hierarchy) => (
                           <SelectItem key={hierarchy.value} value={hierarchy.value}>
                             {hierarchy.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {!isAdmin && (
+                      <p className="text-xs text-gray-500">
+                        Apenas administradores podem criar outros administradores
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -984,13 +1017,18 @@ export default function Employees() {
                           <SelectValue placeholder="Selecione o cargo" />
                         </SelectTrigger>
                         <SelectContent className="z-[10002]">
-                          {HIERARCHIES.map((hierarchy) => (
+                          {availableHierarchies.map((hierarchy) => (
                             <SelectItem key={hierarchy.value} value={hierarchy.value}>
                               {hierarchy.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      {!isAdmin && (
+                        <p className="text-xs text-gray-500">
+                          Apenas administradores podem criar outros administradores
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
