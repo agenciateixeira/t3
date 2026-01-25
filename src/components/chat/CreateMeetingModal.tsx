@@ -126,15 +126,26 @@ export default function CreateMeetingModal({
 
       const participantsToNotify = selectedParticipants.length > 0 ? selectedParticipants : [user.id];
 
-      // Criar notificações para participantes
-      const notifications = participantsToNotify.map((userId) => ({
-        user_id: userId,
-        type: 'event',
-        title: 'Nova reunião agendada',
-        message: `Reunião: ${formData.title} - ${format(meetingDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
-        reference_id: event.id,
-        reference_type: 'event',
-      }));
+      // Buscar nome do usuário que está criando
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      const creatorName = creatorProfile?.full_name || 'Alguém';
+
+      // Criar notificações para participantes (exceto quem criou)
+      const notifications = participantsToNotify
+        .filter(userId => userId !== user.id) // Não notificar quem criou
+        .map((userId) => ({
+          user_id: userId,
+          type: 'event',
+          title: `${creatorName} marcou uma reunião via Meet`,
+          message: `📅 ${formData.title}\n📆 ${format(meetingDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n🎥 ${formData.meet_link || 'Link será enviado'}`,
+          reference_id: event.id,
+          reference_type: 'event',
+        }));
 
       const { error: notificationError } = await supabase
         .from('notifications')

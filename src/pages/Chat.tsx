@@ -725,10 +725,15 @@ export default function Chat() {
 
       if (error) throw error;
 
-      // Substituir optimistic message pela mensagem real IMEDIATAMENTE
+      // Substituir optimistic message pela mensagem real SEM piscar
       if (insertedMessage) {
-        setMessages((prev) => [...prev, insertedMessage]);
         setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+        setMessages((prev) => {
+          // Verificar se já existe (evitar duplicação)
+          const exists = prev.some(m => m.id === insertedMessage.id);
+          if (exists) return prev;
+          return [...prev, insertedMessage];
+        });
       }
 
       // Atualizar conversas
