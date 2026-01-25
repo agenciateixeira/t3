@@ -271,9 +271,18 @@ export default function Chat() {
       fetchMessages(selectedConversation);
 
       // Setup presence channel for typing/recording indicators
-      // IMPORTANTE: Não usar key: user?.id - isso faz cada usuário ter seu próprio estado
-      // Queremos todos na mesma sala de presence
-      const presenceChannel = supabase.channel(`presence:${selectedConversation.id}`);
+      // IMPORTANTE: Todos devem usar o MESMO nome de channel
+      const channelName = selectedConversation.type === 'group'
+        ? `group:${selectedConversation.id}`
+        : `dm:${[user?.id, selectedConversation.id].sort().join('-')}`;
+
+      console.log('Creating presence channel:', channelName);
+      const presenceChannel = supabase.channel(channelName, {
+        config: {
+          broadcast: { self: true },
+          presence: { key: '' }, // Remover key específica para compartilhar estado
+        },
+      });
 
       // Store reference for use in sendTypingIndicator and sendRecordingIndicator
       presenceChannelRef.current = presenceChannel;
