@@ -817,9 +817,14 @@ export default function Employees() {
                     <Label htmlFor="employee-hierarchy">Cargo/Hierarquia *</Label>
                     <Select
                       value={employeeFormData.hierarchy || ''}
-                      onValueChange={(value) =>
-                        setEmployeeFormData({ ...employeeFormData, hierarchy: value })
-                      }
+                      onValueChange={(value) => {
+                        // Se selecionar admin, limpar job_title_id pois não é necessário
+                        if (value === 'admin') {
+                          setEmployeeFormData({ ...employeeFormData, hierarchy: value, job_title_id: '' });
+                        } else {
+                          setEmployeeFormData({ ...employeeFormData, hierarchy: value });
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o cargo" />
@@ -835,14 +840,19 @@ export default function Employees() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="employee-job-title">Cargo</Label>
+                    <Label htmlFor="employee-job-title">
+                      Cargo {employeeFormData.hierarchy === 'admin' && '(não obrigatório para administradores)'}
+                    </Label>
                     <select
                       id="employee-job-title"
                       value={employeeFormData.job_title_id}
                       onChange={(e) => setEmployeeFormData({ ...employeeFormData, job_title_id: e.target.value })}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={employeeFormData.hierarchy === 'admin'}
                     >
-                      <option value="">Selecione um cargo...</option>
+                      <option value="">
+                        {employeeFormData.hierarchy === 'admin' ? 'Acesso total - cargo não necessário' : 'Selecione um cargo...'}
+                      </option>
                       {jobTitles.map((jobTitle) => (
                         <option key={jobTitle.id} value={jobTitle.id}>
                           {jobTitle.name}
@@ -961,9 +971,14 @@ export default function Employees() {
                       <Label htmlFor="edit-employee-hierarchy">Cargo/Hierarquia *</Label>
                       <Select
                         value={editingEmployee.hierarchy || ''}
-                        onValueChange={(value) =>
-                          setEditingEmployee({ ...editingEmployee, hierarchy: value })
-                        }
+                        onValueChange={(value) => {
+                          // Se selecionar admin, limpar job_title_id pois não é necessário
+                          if (value === 'admin') {
+                            setEditingEmployee({ ...editingEmployee, hierarchy: value, job_title_id: null });
+                          } else {
+                            setEditingEmployee({ ...editingEmployee, hierarchy: value });
+                          }
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o cargo" />
@@ -979,14 +994,19 @@ export default function Employees() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="edit-employee-job-title">Cargo</Label>
+                      <Label htmlFor="edit-employee-job-title">
+                        Cargo {editingEmployee.hierarchy === 'admin' && '(não obrigatório para administradores)'}
+                      </Label>
                       <select
                         id="edit-employee-job-title"
                         value={editingEmployee.job_title_id || ''}
                         onChange={(e) => setEditingEmployee({ ...editingEmployee, job_title_id: e.target.value })}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={editingEmployee.hierarchy === 'admin'}
                       >
-                        <option value="">Selecione um cargo...</option>
+                        <option value="">
+                          {editingEmployee.hierarchy === 'admin' ? 'Acesso total - cargo não necessário' : 'Selecione um cargo...'}
+                        </option>
                         {jobTitles.map((jobTitle) => (
                           <option key={jobTitle.id} value={jobTitle.id}>
                             {jobTitle.name}
