@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import Layout from '@/components/Layout';
 import AudioPlayer from '@/components/chat/AudioPlayer';
+import ThreadView from '@/components/chat/ThreadView';
+import MentionAutocomplete from '@/components/chat/MentionAutocomplete';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +30,9 @@ import {
   Trash2,
   Archive,
   ChevronLeft,
+  MessageSquare,
 } from 'lucide-react';
+import { parseMentions, detectMentions } from '@/lib/chatUtils';
 import { useToastContext } from '@/contexts/ToastContext';
 import {
   Dialog,
@@ -77,6 +81,8 @@ interface Message {
   created_at: string;
   sender?: Profile;
   reads?: { user_id: string; read_at: string }[];
+  mentioned_users?: string[];
+  thread_reply_count?: number;
 }
 
 interface Conversation {
@@ -113,6 +119,13 @@ export default function Chat() {
   const [isSending, setIsSending] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+
+  // Thread view
+  const [selectedThread, setSelectedThread] = useState<Message | null>(null);
+
+  // Mention autocomplete
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const messageInputRef = useRef<HTMLInputElement>(null);
 
   // New group dialog
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
@@ -467,7 +480,8 @@ export default function Chat() {
 
       let query = supabase
         .from('messages')
-        .select('*, sender:profiles!messages_sender_id_fkey(id, full_name, avatar_url)');
+        .select('*, sender:profiles!messages_sender_id_fkey(id, full_name, avatar_url)')
+        .is('is_thread_reply', false);  // Apenas mensagens principais, não respostas de thread
 
       if (conversation.type === 'group') {
         query = query.eq('group_id', conversation.id);
@@ -530,6 +544,9 @@ export default function Chat() {
     const optimisticId = `temp-${Date.now()}`;
     const messageContent = newMessage.trim();
 
+    // Detectar menções
+    const mentionedUsers = await detectMentions(messageContent);
+
     // Create optimistic message
     const optimisticMessage: Message = {
       id: optimisticId,
@@ -545,6 +562,7 @@ export default function Chat() {
         full_name: user.user_metadata?.full_name || 'Você',
         avatar_url: user.user_metadata?.avatar_url || null,
       },
+      mentioned_users: mentionedUsers,
     };
 
     // Add to optimistic messages immediately
@@ -559,6 +577,7 @@ export default function Chat() {
       const messageData: any = {
         sender_id: user.id,
         content: messageContent,
+        mentioned_users: mentionedUsers,
       };
 
       if (selectedConversation.type === 'group') {
@@ -916,6 +935,26 @@ export default function Chat() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleMentionSelect = (
+    user: Profile,
+    mentionStart: number,
+    mentionEnd: number
+  ) => {
+    const before = newMessage.substring(0, mentionStart);
+    const after = newMessage.substring(mentionEnd);
+    const newText = `${before}@${user.full_name} ${after}`;
+    setNewMessage(newText);
+
+    // Reposiciona o cursor após a menção
+    setTimeout(() => {
+      if (messageInputRef.current) {
+        const newPosition = mentionStart + user.full_name.length + 2;
+        messageInputRef.current.setSelectionRange(newPosition, newPosition);
+        setCursorPosition(newPosition);
+      }
+    }, 0);
+  };
+
   return (
     <Layout>
       <div
@@ -1164,7 +1203,8 @@ export default function Chat() {
 
         {/* Messages Area */}
         {selectedConversation ? (
-          <div className={`${!selectedConversation ? 'hidden lg:flex' : 'flex'} flex-1 flex-col`} style={{ overflow: 'hidden', minWidth: 0 }}>
+          <>
+          <div className={`${!selectedConversation ? 'hidden lg:flex' : 'flex'} ${selectedThread ? 'hidden lg:flex' : 'flex'} flex-1 flex-col`} style={{ overflow: 'hidden', minWidth: 0 }}>
             {/* Chat Header - Fixed */}
             <div className="bg-[#f0f2f5] border-b border-gray-300 flex-shrink-0">
               <div className="px-4 py-3">
@@ -1352,15 +1392,60 @@ export default function Chat() {
 
                             {message.content && (
                               <div className="px-3 py-1.5 pb-0">
-                                <p className="text-sm whitespace-pre-wrap leading-5">{message.content}</p>
+                                <p className="text-sm whitespace-pre-wrap leading-5">
+                                  {parseMentions(
+                                    message.content,
+                                    message.mentioned_users || [],
+                                    profiles
+                                  ).map((part, idx) => {
+                                    if (part.type === 'mention') {
+                                      return (
+                                        <span
+                                          key={idx}
+                                          className="bg-[#2db4af]/20 text-[#2db4af] px-1 rounded font-semibold cursor-pointer hover:bg-[#2db4af]/30"
+                                          title={part.content}
+                                        >
+                                          {part.content}
+                                        </span>
+                                      );
+                                    }
+                                    return <span key={idx}>{part.content}</span>;
+                                  })}
+                                </p>
                               </div>
                             )}
 
-                            <div className="px-3 pb-1.5 pt-1 flex items-center justify-end gap-1">
-                              <span className="text-[11px] text-gray-500">
-                                {format(parseISO(message.created_at), 'HH:mm')}
-                              </span>
-                              {isOwn && <CheckCheck className="h-4 w-4 text-[#53bdeb]" />}
+                            {/* Thread Reply Counter & Button */}
+                            {!message.id.startsWith('temp-') && message.thread_reply_count !== undefined && message.thread_reply_count > 0 && (
+                              <div className="px-3 py-1">
+                                <button
+                                  onClick={() => setSelectedThread(message)}
+                                  className="text-xs text-[#2db4af] hover:underline flex items-center gap-1"
+                                >
+                                  <MessageSquare className="h-3 w-3" />
+                                  {message.thread_reply_count} {message.thread_reply_count === 1 ? 'resposta' : 'respostas'}
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="px-3 pb-1.5 pt-1 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1">
+                                {!message.id.startsWith('temp-') && (
+                                  <button
+                                    onClick={() => setSelectedThread(message)}
+                                    className="text-gray-500 hover:text-[#2db4af] transition-colors"
+                                    title="Responder em thread"
+                                  >
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[11px] text-gray-500">
+                                  {format(parseISO(message.created_at), 'HH:mm')}
+                                </span>
+                                {isOwn && <CheckCheck className="h-4 w-4 text-[#53bdeb]" />}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1436,12 +1521,26 @@ export default function Chat() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  <div className="flex-1 bg-white rounded-lg px-4 py-2.5 flex items-center gap-2">
+                  <div className="flex-1 bg-white rounded-lg px-4 py-2.5 flex items-center gap-2 relative">
+                    <MentionAutocomplete
+                      inputValue={newMessage}
+                      cursorPosition={cursorPosition}
+                      onSelectUser={handleMentionSelect}
+                      inputRef={messageInputRef}
+                    />
                     <Input
+                      ref={messageInputRef}
                       value={newMessage}
                       onChange={(e) => {
                         setNewMessage(e.target.value);
+                        setCursorPosition(e.target.selectionStart || 0);
                         handleTyping();
+                      }}
+                      onKeyUp={(e) => {
+                        setCursorPosition((e.target as HTMLInputElement).selectionStart || 0);
+                      }}
+                      onClick={(e) => {
+                        setCursorPosition((e.target as HTMLInputElement).selectionStart || 0);
                       }}
                       placeholder="Digite uma mensagem"
                       className="flex-1 border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
@@ -1470,6 +1569,18 @@ export default function Chat() {
               )}
             </div>
           </div>
+
+          {/* Thread View - Desktop: Side Panel, Mobile: Full Screen */}
+          {selectedThread && (
+            <div className={`${selectedThread ? 'flex' : 'hidden lg:flex'} w-full lg:w-96 border-l border-gray-300 flex-shrink-0`}>
+              <ThreadView
+                parentMessage={selectedThread}
+                onClose={() => setSelectedThread(null)}
+                allUsers={profiles}
+              />
+            </div>
+          )}
+          </>
         ) : (
           <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-[#f0f2f5] border-b-4 border-[#25d366]">
             <div className="text-center text-gray-600 max-w-md px-8">

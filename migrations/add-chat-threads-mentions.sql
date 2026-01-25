@@ -4,16 +4,16 @@
 -- Adiciona suporte para threads (respostas) e menções (@user) no chat
 -- ============================================================================
 
--- Adicionar colunas à tabela chat_messages para suportar threads
-ALTER TABLE public.chat_messages
-ADD COLUMN IF NOT EXISTS thread_id UUID REFERENCES public.chat_messages(id) ON DELETE CASCADE,
+-- Adicionar colunas à tabela messages para suportar threads
+ALTER TABLE public.messages
+ADD COLUMN IF NOT EXISTS thread_id UUID REFERENCES public.messages(id) ON DELETE CASCADE,
 ADD COLUMN IF NOT EXISTS is_thread_reply BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS thread_reply_count INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS mentioned_users UUID[] DEFAULT '{}';
 
 -- Índices para performance
-CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_id ON public.chat_messages(thread_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_mentioned_users ON public.chat_messages USING GIN(mentioned_users);
+CREATE INDEX IF NOT EXISTS idx_messages_thread_id ON public.messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_messages_mentioned_users ON public.messages USING GIN(mentioned_users);
 
 -- Função para incrementar contador de respostas em thread
 CREATE OR REPLACE FUNCTION increment_thread_reply_count()
@@ -22,7 +22,7 @@ BEGIN
   -- Se a mensagem é uma resposta a uma thread
   IF NEW.thread_id IS NOT NULL AND NEW.is_thread_reply = true THEN
     -- Incrementar o contador na mensagem pai
-    UPDATE public.chat_messages
+    UPDATE public.messages
     SET thread_reply_count = thread_reply_count + 1
     WHERE id = NEW.thread_id;
   END IF;
@@ -32,9 +32,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para incrementar contador
-DROP TRIGGER IF EXISTS increment_thread_count_trigger ON public.chat_messages;
+DROP TRIGGER IF EXISTS increment_thread_count_trigger ON public.messages;
 CREATE TRIGGER increment_thread_count_trigger
-  AFTER INSERT ON public.chat_messages
+  AFTER INSERT ON public.messages
   FOR EACH ROW
   EXECUTE FUNCTION increment_thread_reply_count();
 
@@ -45,7 +45,7 @@ BEGIN
   -- Se a mensagem deletada era uma resposta a uma thread
   IF OLD.thread_id IS NOT NULL AND OLD.is_thread_reply = true THEN
     -- Decrementar o contador na mensagem pai
-    UPDATE public.chat_messages
+    UPDATE public.messages
     SET thread_reply_count = GREATEST(0, thread_reply_count - 1)
     WHERE id = OLD.thread_id;
   END IF;
@@ -55,9 +55,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para decrementar contador
-DROP TRIGGER IF EXISTS decrement_thread_count_trigger ON public.chat_messages;
+DROP TRIGGER IF EXISTS decrement_thread_count_trigger ON public.messages;
 CREATE TRIGGER decrement_thread_count_trigger
-  AFTER DELETE ON public.chat_messages
+  AFTER DELETE ON public.messages
   FOR EACH ROW
   EXECUTE FUNCTION decrement_thread_reply_count();
 
@@ -110,9 +110,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para notificar menções
-DROP TRIGGER IF EXISTS notify_mentions_trigger ON public.chat_messages;
+DROP TRIGGER IF EXISTS notify_mentions_trigger ON public.messages;
 CREATE TRIGGER notify_mentions_trigger
-  AFTER INSERT ON public.chat_messages
+  AFTER INSERT ON public.messages
   FOR EACH ROW
   EXECUTE FUNCTION notify_mentioned_users();
 
@@ -122,8 +122,8 @@ SELECT
   m.*,
   COUNT(r.id) as reply_count,
   MAX(r.created_at) as last_reply_at
-FROM public.chat_messages m
-LEFT JOIN public.chat_messages r ON r.thread_id = m.id AND r.is_thread_reply = true
+FROM public.messages m
+LEFT JOIN public.messages r ON r.thread_id = m.id AND r.is_thread_reply = true
 WHERE m.is_thread_reply = false OR m.is_thread_reply IS NULL
 GROUP BY m.id;
 
@@ -137,6 +137,6 @@ SELECT
   is_nullable,
   column_default
 FROM information_schema.columns
-WHERE table_name = 'chat_messages'
+WHERE table_name = 'messages'
   AND column_name IN ('thread_id', 'is_thread_reply', 'thread_reply_count', 'mentioned_users')
 ORDER BY ordinal_position;

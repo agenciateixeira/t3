@@ -50,55 +50,50 @@ export const formatMentions = (text: string, users: { id: string; full_name: str
 };
 
 /**
- * Renderiza texto com menções destacadas
+ * Processa o conteúdo da mensagem e retorna partes separadas para renderização
  */
-export const renderMessageWithMentions = (
+export const parseMentions = (
   content: string,
   mentionedUserIds: string[],
   allUsers: { id: string; full_name: string }[]
-): JSX.Element => {
+): Array<{ type: 'text' | 'mention'; content: string; userId?: string }> => {
   if (!mentionedUserIds || mentionedUserIds.length === 0) {
-    return <span>{content}</span>;
+    return [{ type: 'text', content }];
   }
 
-  // Buscar nomes dos usuários mencionados
   const mentionedUsers = allUsers.filter((u) => mentionedUserIds.includes(u.id));
-
-  // Substituir @username por versão destacada
-  let parts: (string | JSX.Element)[] = [content];
+  const parts: Array<{ type: 'text' | 'mention'; content: string; userId?: string }> = [];
+  let remainingText = content;
 
   mentionedUsers.forEach((user) => {
-    const newParts: (string | JSX.Element)[] = [];
+    const regex = new RegExp(`(@${user.full_name})`, 'gi');
+    const tempParts: typeof parts = [];
 
-    parts.forEach((part, partIndex) => {
-      if (typeof part === 'string') {
-        const regex = new RegExp(`(@${user.full_name})`, 'gi');
-        const matches = part.split(regex);
-
-        matches.forEach((match, i) => {
-          if (match.toLowerCase() === `@${user.full_name.toLowerCase()}`) {
-            newParts.push(
-              <span
-                key={`${partIndex}-${i}`}
-                className="bg-[#2db4af]/20 text-[#2db4af] px-1 rounded font-semibold cursor-pointer hover:bg-[#2db4af]/30"
-                title={user.full_name}
-              >
-                {match}
-              </span>
-            );
-          } else if (match) {
-            newParts.push(match);
-          }
+    const segments = remainingText.split(regex);
+    segments.forEach((segment) => {
+      if (segment.toLowerCase() === `@${user.full_name.toLowerCase()}`) {
+        tempParts.push({
+          type: 'mention',
+          content: segment,
+          userId: user.id,
         });
-      } else {
-        newParts.push(part);
+      } else if (segment) {
+        tempParts.push({
+          type: 'text',
+          content: segment,
+        });
       }
     });
 
-    parts = newParts;
+    parts.push(...tempParts);
+    remainingText = '';
   });
 
-  return <>{parts}</>;
+  if (parts.length === 0) {
+    return [{ type: 'text', content }];
+  }
+
+  return parts;
 };
 
 /**
