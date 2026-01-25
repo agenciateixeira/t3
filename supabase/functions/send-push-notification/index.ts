@@ -73,10 +73,24 @@ serve(async (req) => {
       );
     }
 
-    // VAPID keys (você vai precisar gerar e adicionar como secrets)
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:your-email@example.com';
+    // Buscar VAPID keys do Vault (Supabase Secrets)
+    const { data: secrets, error: secretsError } = await supabaseClient
+      .rpc('get_vapid_keys');
+
+    let vapidPublicKey: string;
+    let vapidPrivateKey: string;
+    let vapidSubject: string;
+
+    if (secretsError || !secrets) {
+      // Fallback: tentar Deno.env (se configurado como environment variables)
+      vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY') || '';
+      vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') || '';
+      vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:your-email@example.com';
+    } else {
+      vapidPublicKey = secrets.public_key;
+      vapidPrivateKey = secrets.private_key;
+      vapidSubject = secrets.subject;
+    }
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       throw new Error('VAPID keys not configured');
