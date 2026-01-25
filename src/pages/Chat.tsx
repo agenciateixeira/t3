@@ -218,13 +218,13 @@ export default function Chat() {
           const isRelevant =
             newMessage.recipient_id === user?.id || // DM recebida
             newMessage.sender_id === user?.id || // Mensagem enviada por mim
-            newMessage.group_id; // Mensagem em grupo (verificar se sou membro será feito no fetch)
+            newMessage.group_id; // Mensagem em grupo
 
           if (isRelevant) {
             // Atualizar lista de conversas
             fetchConversations();
 
-            // Se a mensagem é da conversa atualmente selecionada, atualizar mensagens
+            // Se a mensagem é da conversa atualmente selecionada
             if (selectedConversationRef.current) {
               const currentConv = selectedConversationRef.current;
               const isCurrentConversation =
@@ -232,7 +232,9 @@ export default function Chat() {
                   (newMessage.sender_id === currentConv.id || newMessage.recipient_id === currentConv.id)) ||
                 (currentConv.type === 'group' && newMessage.group_id === currentConv.id);
 
-              if (isCurrentConversation) {
+              // Apenas atualizar se for mensagem de OUTRA pessoa
+              // (minhas mensagens já foram adicionadas no handleSendMessage)
+              if (isCurrentConversation && newMessage.sender_id !== user?.id) {
                 fetchMessages(currentConv);
               }
             }
@@ -715,13 +717,21 @@ export default function Chat() {
         messageData.recipient_id = selectedConversation.id;
       }
 
-      const { error } = await supabase.from('messages').insert(messageData);
+      const { data: insertedMessage, error } = await supabase
+        .from('messages')
+        .insert(messageData)
+        .select('*, sender:profiles!messages_sender_id_fkey(id, full_name, avatar_url)')
+        .single();
+
       if (error) throw error;
 
-      // Remove from optimistic messages after successful send
-      setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      // Substituir optimistic message pela mensagem real IMEDIATAMENTE
+      if (insertedMessage) {
+        setMessages((prev) => [...prev, insertedMessage]);
+        setOptimisticMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      }
 
-      // Atualizar conversas mas NÃO refetch messages (realtime vai fazer isso)
+      // Atualizar conversas
       fetchConversations();
     } catch (error: any) {
       // Remove failed optimistic message
