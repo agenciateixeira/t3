@@ -26,10 +26,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+interface Conversation {
+  id: string;
+  type: 'group' | 'direct';
+}
+
 interface CreateDealModalProps {
   open: boolean;
   onClose: () => void;
-  conversationId: string;
+  conversation: Conversation;
   onDealCreated?: (deal: any) => void;
 }
 
@@ -51,7 +56,7 @@ interface Stage {
 export default function CreateDealModal({
   open,
   onClose,
-  conversationId,
+  conversation,
   onDealCreated,
 }: CreateDealModalProps) {
   const { user } = useAuth();
@@ -170,7 +175,8 @@ Etapa: ${stage?.name || 'N/A'}
 Previsão: ${format(formData.expected_close_date, "dd/MM/yyyy", { locale: ptBR })}`;
 
       const { error: messageError } = await supabase.from('messages').insert({
-        conversation_id: conversationId,
+        group_id: conversation.type === 'group' ? conversation.id : null,
+        recipient_id: conversation.type === 'direct' ? conversation.id : null,
         sender_id: user.id,
         content: dealMessage,
         mentioned_users: formData.assignee_id ? [formData.assignee_id] : [],

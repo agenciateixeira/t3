@@ -26,10 +26,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
+interface Conversation {
+  id: string;
+  type: 'group' | 'direct';
+}
+
 interface CreateTaskModalProps {
   open: boolean;
   onClose: () => void;
-  conversationId: string;
+  conversation: Conversation;
   onTaskCreated?: (task: any) => void;
 }
 
@@ -41,7 +46,7 @@ interface Profile {
 export default function CreateTaskModal({
   open,
   onClose,
-  conversationId,
+  conversation,
   onTaskCreated,
 }: CreateTaskModalProps) {
   const { user } = useAuth();
@@ -110,7 +115,8 @@ Vencimento: ${format(formData.due_date, "dd/MM/yyyy", { locale: ptBR })}
 Prioridade: ${formData.priority === 'high' ? '🔴 Alta' : formData.priority === 'medium' ? '🟡 Média' : '🟢 Baixa'}`;
 
       const { error: messageError } = await supabase.from('messages').insert({
-        conversation_id: conversationId,
+        group_id: conversation.type === 'group' ? conversation.id : null,
+        recipient_id: conversation.type === 'direct' ? conversation.id : null,
         sender_id: user.id,
         content: taskMessage,
         mentioned_users: formData.assigned_to ? [formData.assigned_to] : [],

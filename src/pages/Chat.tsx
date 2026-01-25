@@ -1956,7 +1956,7 @@ export default function Chat() {
           <CreateTaskModal
             open={isTaskModalOpen}
             onClose={() => setIsTaskModalOpen(false)}
-            conversationId={selectedConversation.id}
+            conversation={{ id: selectedConversation.id, type: selectedConversation.type }}
             onTaskCreated={() => {
               toast({
                 variant: 'default',
@@ -1969,7 +1969,7 @@ export default function Chat() {
           <CreateDealModal
             open={isDealModalOpen}
             onClose={() => setIsDealModalOpen(false)}
-            conversationId={selectedConversation.id}
+            conversation={{ id: selectedConversation.id, type: selectedConversation.type }}
             onDealCreated={() => {
               toast({
                 variant: 'default',
@@ -1982,7 +1982,7 @@ export default function Chat() {
           <CreateReminderModal
             open={isReminderModalOpen}
             onClose={() => setIsReminderModalOpen(false)}
-            conversationId={selectedConversation.id}
+            conversation={{ id: selectedConversation.id, type: selectedConversation.type }}
             onReminderCreated={() => {
               toast({
                 variant: 'default',

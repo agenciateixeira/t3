@@ -26,10 +26,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+interface Conversation {
+  id: string;
+  type: 'group' | 'direct';
+}
+
 interface CreateReminderModalProps {
   open: boolean;
   onClose: () => void;
-  conversationId: string;
+  conversation: Conversation;
   onReminderCreated?: (reminder: any) => void;
 }
 
@@ -41,7 +46,7 @@ interface Profile {
 export default function CreateReminderModal({
   open,
   onClose,
-  conversationId,
+  conversation,
   onReminderCreated,
 }: CreateReminderModalProps) {
   const { user } = useAuth();
@@ -131,7 +136,8 @@ Para: ${mentionedNames}
 Data: ${format(reminderDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
 
       const { error: messageError } = await supabase.from('messages').insert({
-        conversation_id: conversationId,
+        group_id: conversation.type === 'group' ? conversation.id : null,
+        recipient_id: conversation.type === 'direct' ? conversation.id : null,
         sender_id: user.id,
         content: reminderMessage,
         mentioned_users: usersToNotify,
