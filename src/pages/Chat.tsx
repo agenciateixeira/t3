@@ -6,6 +6,10 @@ import Layout from '@/components/Layout';
 import AudioPlayer from '@/components/chat/AudioPlayer';
 import ThreadView from '@/components/chat/ThreadView';
 import MentionAutocomplete from '@/components/chat/MentionAutocomplete';
+import SlashCommandMenu from '@/components/chat/SlashCommandMenu';
+import CreateTaskModal from '@/components/chat/CreateTaskModal';
+import CreateDealModal from '@/components/chat/CreateDealModal';
+import CreateReminderModal from '@/components/chat/CreateReminderModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,6 +130,11 @@ export default function Chat() {
   // Mention autocomplete
   const [cursorPosition, setCursorPosition] = useState(0);
   const messageInputRef = useRef<HTMLInputElement>(null);
+
+  // Slash command modals
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isDealModalOpen, setIsDealModalOpen] = useState(false);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
 
   // New group dialog
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
@@ -955,6 +964,42 @@ export default function Chat() {
     }, 0);
   };
 
+  const handleSlashCommand = (commandId: string) => {
+    // Limpar o input do comando
+    setNewMessage('');
+
+    // Abrir modal correspondente
+    switch (commandId) {
+      case 'task':
+        setIsTaskModalOpen(true);
+        break;
+      case 'deal':
+        setIsDealModalOpen(true);
+        break;
+      case 'reminder':
+        setIsReminderModalOpen(true);
+        break;
+      case 'meeting':
+        // TODO: Implementar modal de reunião
+        toast({
+          variant: 'default',
+          title: 'Em breve',
+          description: 'Funcionalidade de reunião em desenvolvimento',
+        });
+        break;
+      case 'timer':
+        // TODO: Implementar modal de timer
+        toast({
+          variant: 'default',
+          title: 'Em breve',
+          description: 'Funcionalidade de timer em desenvolvimento',
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <Layout>
       <div
@@ -1528,6 +1573,12 @@ export default function Chat() {
                       onSelectUser={handleMentionSelect}
                       inputRef={messageInputRef}
                     />
+                    <SlashCommandMenu
+                      inputValue={newMessage}
+                      cursorPosition={cursorPosition}
+                      onSelectCommand={handleSlashCommand}
+                      inputRef={messageInputRef}
+                    />
                     <Input
                       ref={messageInputRef}
                       value={newMessage}
@@ -1898,6 +1949,50 @@ export default function Chat() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Slash Command Modals */}
+      {selectedConversation && (
+        <>
+          <CreateTaskModal
+            open={isTaskModalOpen}
+            onClose={() => setIsTaskModalOpen(false)}
+            conversationId={selectedConversation.id}
+            onTaskCreated={() => {
+              toast({
+                variant: 'default',
+                title: 'Tarefa criada!',
+                description: 'A tarefa foi criada e compartilhada no chat.',
+              });
+            }}
+          />
+
+          <CreateDealModal
+            open={isDealModalOpen}
+            onClose={() => setIsDealModalOpen(false)}
+            conversationId={selectedConversation.id}
+            onDealCreated={() => {
+              toast({
+                variant: 'default',
+                title: 'Deal criado!',
+                description: 'O deal foi criado e compartilhado no chat.',
+              });
+            }}
+          />
+
+          <CreateReminderModal
+            open={isReminderModalOpen}
+            onClose={() => setIsReminderModalOpen(false)}
+            conversationId={selectedConversation.id}
+            onReminderCreated={() => {
+              toast({
+                variant: 'default',
+                title: 'Lembrete criado!',
+                description: 'O lembrete foi criado e as notificações foram agendadas.',
+              });
+            }}
+          />
+        </>
+      )}
     </Layout>
   );
 }
