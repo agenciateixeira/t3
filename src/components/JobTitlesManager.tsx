@@ -241,6 +241,9 @@ export default function JobTitlesManager() {
             <DialogTitle>
               {editingJobTitle ? 'Editar Cargo' : 'Novo Cargo'}
             </DialogTitle>
+            <DialogDescription>
+              {editingJobTitle ? 'Edite as informações do cargo' : 'Preencha as informações para criar um novo cargo'}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
