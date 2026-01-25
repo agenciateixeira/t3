@@ -379,7 +379,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Sidebar - Desktop only */}
       <aside className="hidden lg:block fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
         {/* Navigation */}
-        <nav className="px-4 py-6 space-y-1 overflow-y-auto h-full">
+        <nav className="px-4 pt-12 pb-6 space-y-1 overflow-y-auto h-full">
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
