@@ -38,7 +38,7 @@ interface LayoutProps {
 
 interface SearchResult {
   id: string;
-  type: 'client' | 'task' | 'deal' | 'event' | 'employee';
+  type: 'client' | 'task' | 'deal' | 'event' | 'employee' | 'page';
   title: string;
   subtitle?: string;
   path: string;
@@ -73,6 +73,39 @@ export default function Layout({ children }: LayoutProps) {
     const results: SearchResult[] = [];
 
     try {
+      // Buscar páginas/seções do sistema
+      const pages = [
+        { id: 'dashboard', name: 'Dashboard', path: '/dashboard', keywords: ['painel', 'inicio', 'home', 'principal'] },
+        { id: 'clients', name: 'Clientes', path: '/clients', keywords: ['clientes', 'empresas', 'companies'] },
+        { id: 'tasks', name: 'Tarefas', path: '/tasks', keywords: ['tarefas', 'tasks', 'to-do', 'afazeres'] },
+        { id: 'calendar', name: 'Calendário', path: '/calendar', keywords: ['calendario', 'agenda', 'eventos', 'compromissos'] },
+        { id: 'employees', name: 'Equipe', path: '/employees', keywords: ['equipe', 'funcionarios', 'colaboradores', 'time', 'pessoas'] },
+        { id: 'tools', name: 'Ferramentas', path: '/tools', keywords: ['ferramentas', 'tools', 'utilidades'] },
+        { id: 'chat', name: 'Chat', path: '/chat', keywords: ['chat', 'mensagens', 'conversa'] },
+        { id: 'profile', name: 'Perfil', path: '/profile', keywords: ['perfil', 'meu perfil', 'conta', 'usuario'] },
+        { id: 'settings', name: 'Configurações', path: '/settings', keywords: ['configuracoes', 'settings', 'ajustes'] },
+        ...(profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager'
+          ? [{ id: 'active-timers', name: 'Timers Ativos', path: '/active-timers', keywords: ['timers', 'cronometros', 'tempo'] }]
+          : []),
+      ];
+
+      const lowerQuery = query.toLowerCase();
+      const matchingPages = pages.filter(page =>
+        page.name.toLowerCase().includes(lowerQuery) ||
+        page.keywords.some(keyword => keyword.includes(lowerQuery))
+      );
+
+      matchingPages.forEach(page => {
+        results.push({
+          id: page.id,
+          type: 'page',
+          title: page.name,
+          subtitle: 'Ir para página',
+          path: page.path,
+        });
+      });
+
+      try {
       // Buscar clientes
       const { data: clients } = await supabase
         .from('clients')
@@ -181,6 +214,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const getResultIcon = (type: string) => {
     switch (type) {
+      case 'page': return <LayoutDashboard className="h-4 w-4 text-[#2db4af]" />;
       case 'client': return <Briefcase className="h-4 w-4" />;
       case 'task': return <CheckSquare className="h-4 w-4" />;
       case 'deal': return <Briefcase className="h-4 w-4 text-green-600" />;
@@ -192,6 +226,7 @@ export default function Layout({ children }: LayoutProps) {
 
   const getResultTypeLabel = (type: string) => {
     switch (type) {
+      case 'page': return 'Página';
       case 'client': return 'Cliente';
       case 'task': return 'Tarefa';
       case 'deal': return 'Oportunidade';
