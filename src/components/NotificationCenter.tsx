@@ -69,10 +69,30 @@ export default function NotificationCenter() {
           table: 'notifications',
           filter: `user_id=eq.${user?.id}`,
         },
-        (payload) => {
+        async (payload) => {
           const newNotification = payload.new as Notification;
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
+
+          // Chamar a Edge Function para enviar push notification
+          try {
+            await supabase.functions.invoke('send-push-notification', {
+              body: {
+                notification_id: newNotification.id,
+                user_id: newNotification.user_id,
+                notification: {
+                  title: newNotification.title,
+                  message: newNotification.message,
+                  type: newNotification.type,
+                  reference_id: newNotification.reference_id,
+                  reference_type: newNotification.reference_type,
+                },
+              },
+            });
+          } catch (error) {
+            // Erro ao enviar push não deve bloquear a notificação in-app
+            console.error('Erro ao enviar push notification:', error);
+          }
         }
       )
       .on(

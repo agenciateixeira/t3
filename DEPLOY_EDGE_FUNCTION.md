@@ -114,10 +114,25 @@ https://supabase.com/dashboard/project/hukbilmyblqlomoaiszm/logs/edge-functions
 
 ---
 
+## ⚙️ Configurar Webhook (CRÍTICO!)
+
+**IMPORTANTE**: Para que as push notifications funcionem mesmo quando o app está fechado, você precisa configurar um Database Webhook.
+
+📄 **Siga as instruções detalhadas em**: `CONFIGURE_WEBHOOK.md`
+
+Resumo rápido:
+1. Acesse: https://supabase.com/dashboard/project/hukbilmyblqlomoaiszm/database/hooks
+2. Crie novo webhook na tabela `notifications`
+3. Configure para chamar a Edge Function em eventos INSERT
+4. Use o payload template do arquivo CONFIGURE_WEBHOOK.md
+
+---
+
 ## ✅ Checklist
 
 - [ ] Edge Function deployada
 - [ ] Secrets configurados (3 secrets do VAPID)
+- [ ] **Database Webhook configurado** ⚠️ NOVO!
 - [ ] Function testada e funcionando
 - [ ] Logs verificados (sem erros)
 
