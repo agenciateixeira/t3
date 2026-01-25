@@ -26,7 +26,7 @@ const signupSchema = z.object({
 });
 
 type TabType = 'login' | 'signup';
-type SignupStep = 'cpf' | 'password';
+type SignupStep = 'cpf' | 'password' | 'reset-password';
 
 // Função para mascarar email: ab***@ex*****.com
 function maskEmail(email: string): string {
@@ -243,20 +243,28 @@ export default function Auth() {
 
       if (emailData) {
         // Se encontrou email, significa que já existe conta criada
-        const maskedEmailAddress = maskEmail(emailData);
+        // Buscar dados do colaborador pelo CPF
+        const employee = await getPreRegisteredEmployee(signupData.cpf);
 
+        if (!employee) {
+          setToastMessage({
+            variant: 'destructive',
+            title: 'Erro',
+            description: 'Não foi possível encontrar os dados do colaborador.',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Permitir redefinir senha diretamente
+        setEmployeeData({ ...employee, email: emailData });
+        setSignupStep('reset-password');
         setToastMessage({
           variant: 'default',
-          title: 'Conta encontrada!',
-          description: `Este CPF já possui uma conta vinculada ao email ${maskedEmailAddress}. Esqueceu sua senha? Use "Esqueci minha senha" na tela de login.`,
+          title: 'Primeiro acesso',
+          description: `Olá, ${employee.full_name}! Este CPF já possui cadastro. Defina sua nova senha de acesso.`,
         });
         setIsLoading(false);
-
-        // Mudar para aba de login após 2 segundos
-        setTimeout(() => {
-          setActiveTab('login');
-          setLoginData({ ...loginData, identifier: signupData.cpf });
-        }, 2000);
         return;
       }
 
@@ -371,6 +379,68 @@ export default function Auth() {
     setEmployeeData(null);
     setSignupData({ ...signupData, password: '', confirmPassword: '' });
     setErrors({});
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    const result = signupSchema.safeParse(signupData);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((err) => {
+        if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    if (!employeeData || !employeeData.email) {
+      setToastMessage({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Dados do colaborador não encontrados.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Usar função RPC personalizada para resetar senha (será criada no Supabase)
+      const { data, error: rpcError } = await supabase.rpc('reset_user_password_by_cpf', {
+        user_cpf: onlyNumbers(signupData.cpf),
+        new_password: signupData.password,
+      });
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      setToastMessage({
+        variant: 'default',
+        title: 'Senha definida!',
+        description: 'Sua senha foi criada com sucesso. Faça login com suas credenciais.',
+      });
+
+      // Redirecionar para login após 2 segundos
+      setTimeout(() => {
+        setActiveTab('login');
+        setLoginData({ identifier: signupData.cpf, password: signupData.password });
+        setSignupStep('cpf');
+        setEmployeeData(null);
+        setSignupData({ cpf: '', password: '', confirmPassword: '' });
+      }, 2000);
+    } catch (error: any) {
+      console.error('Erro ao redefinir senha:', error);
+      setToastMessage({
+        variant: 'destructive',
+        title: 'Erro ao definir senha',
+        description: error.message || 'Ocorreu um erro ao tentar definir sua senha. Tente usar "Esqueci minha senha" no login.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -609,7 +679,7 @@ export default function Auth() {
                 )}
               </Button>
             </form>
-          ) : (
+          ) : signupStep === 'password' ? (
             <form onSubmit={handlePasswordSubmit} className="space-y-5">
               {/* Colaborador encontrado */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -685,6 +755,87 @@ export default function Auth() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     'Criar conta'
+                  )}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            // Reset Password Form (quando conta já existe)
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-5">
+              {/* Info do colaborador */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Primeiro Acesso
+                    </p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      {employeeData?.full_name}, este CPF já possui cadastro. Defina sua senha de acesso.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="reset-password"
+                  className="text-[11px] font-medium text-gray-400 uppercase tracking-wider"
+                >
+                  NOVA SENHA
+                </Label>
+                <Input
+                  id="reset-password"
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={signupData.password}
+                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                  className="h-11 rounded-lg border-gray-200 bg-white placeholder:text-gray-300 text-gray-700 transition-all duration-150 focus:border-[#2db4af] focus:ring-2 focus:ring-[#2db4af]/10"
+                />
+                {errors.password && (
+                  <p className="text-[11px] text-destructive mt-1">{errors.password}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="reset-confirm"
+                  className="text-[11px] font-medium text-gray-400 uppercase tracking-wider"
+                >
+                  CONFIRMAR SENHA
+                </Label>
+                <Input
+                  id="reset-confirm"
+                  type="password"
+                  placeholder="Digite a senha novamente"
+                  value={signupData.confirmPassword}
+                  onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+                  className="h-11 rounded-lg border-gray-200 bg-white placeholder:text-gray-300 text-gray-700 transition-all duration-150 focus:border-[#2db4af] focus:ring-2 focus:ring-[#2db4af]/10"
+                />
+                {errors.confirmPassword && (
+                  <p className="text-[11px] text-destructive mt-1">{errors.confirmPassword}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={handleBackToCPF}
+                  variant="outline"
+                  className="flex-1 h-11 rounded-full font-medium text-sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Voltar
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 h-11 rounded-full font-medium text-sm bg-[#2db4af] hover:bg-[#28a39e] text-white transition-all duration-150 shadow-sm hover:shadow-md"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Definir Senha'
                   )}
                 </Button>
               </div>
