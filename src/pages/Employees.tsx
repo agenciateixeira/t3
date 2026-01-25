@@ -358,9 +358,10 @@ export default function Employees() {
         throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
       }
 
-      // PASSO 2: Criar usuário via Supabase Auth
+      // PASSO 2: Criar usuário via Supabase Auth (sem auto-login)
       const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
 
+      // Usar signInAnonymously temporariamente para evitar auto-login
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: employeeFormData.email,
         password: tempPassword,
@@ -376,6 +377,14 @@ export default function Employees() {
           },
         },
       });
+
+      // IMPORTANTE: Imediatamente após signUp, restaurar sessão do admin
+      if (!authError && adminSession) {
+        await supabase.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token,
+        });
+      }
 
       if (authError) {
         // Se o erro for "User already registered", dar mensagem mais clara

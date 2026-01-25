@@ -104,6 +104,22 @@ export default function CreateTaskModal({
 
       if (taskError) throw taskError;
 
+      // Criar evento no calendário para a tarefa
+      const { error: calendarError } = await supabase
+        .from('calendar_events')
+        .insert({
+          title: `📋 ${formData.title}`,
+          description: formData.description || null,
+          start_date: `${format(formData.due_date, 'yyyy-MM-dd')}T09:00:00`,
+          end_date: `${format(formData.due_date, 'yyyy-MM-dd')}T10:00:00`,
+          created_by: user.id,
+          event_type: 'task',
+          task_id: task.id,
+          all_day: false,
+        });
+
+      if (calendarError) console.error('Erro ao criar evento no calendário:', calendarError);
+
       // Buscar nome do responsável
       const assignedProfile = profiles.find((p) => p.id === (formData.assigned_to || user.id));
 

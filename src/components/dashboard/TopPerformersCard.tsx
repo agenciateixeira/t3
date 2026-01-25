@@ -54,15 +54,17 @@ export function TopPerformersCard() {
           .eq('status', 'done')
           .gte('updated_at', thirtyDaysAgo.toISOString());
 
-        // Deals ganhos nos últimos 30 dias (assumindo que o usuário está em assigned_to)
+        // Deals ganhos nos últimos 30 dias
         const { data: wonDeals } = await supabase
           .from('deals')
-          .select('value')
-          .eq('assigned_to', user.id)
-          .eq('stage_id', 'won')
+          .select('value, stage:pipeline_stages!deals_stage_id_fkey(stage_type)')
+          .eq('assignee_id', user.id)
           .gte('updated_at', thirtyDaysAgo.toISOString());
 
-        const totalRevenue = wonDeals?.reduce((sum, deal) => sum + (deal.value || 0), 0) || 0;
+        // Filtrar apenas deals ganhos
+        const wonDealsFiltered = wonDeals?.filter(d => d.stage?.stage_type === 'won') || [];
+
+        const totalRevenue = wonDealsFiltered.reduce((sum, deal) => sum + (deal.value || 0), 0);
 
         // Tempo total trabalhado nos últimos 30 dias
         const { data: timeLogs } = await supabase

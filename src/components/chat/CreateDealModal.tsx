@@ -160,6 +160,23 @@ export default function CreateDealModal({
 
       if (dealError) throw dealError;
 
+      // Criar evento no calendário para o deal (data de previsão de fechamento)
+      const { error: calendarError } = await supabase
+        .from('calendar_events')
+        .insert({
+          title: `💼 ${formData.title}`,
+          description: formData.description || `Deal - ${formData.title}`,
+          start_date: `${format(formData.expected_close_date, 'yyyy-MM-dd')}T09:00:00`,
+          end_date: `${format(formData.expected_close_date, 'yyyy-MM-dd')}T10:00:00`,
+          created_by: user.id,
+          event_type: 'deal',
+          deal_id: deal.id,
+          client_id: formData.client_id || null,
+          all_day: false,
+        });
+
+      if (calendarError) console.error('Erro ao criar evento no calendário:', calendarError);
+
       // Buscar nome do responsável e cliente
       const assignedProfile = profiles.find((p) => p.id === (formData.assignee_id || user.id));
       const client = clients.find((c) => c.id === formData.client_id);

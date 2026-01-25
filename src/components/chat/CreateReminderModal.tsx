@@ -121,6 +121,21 @@ export default function CreateReminderModal({
 
       if (notificationError) throw notificationError;
 
+      // Criar evento no calendário para o lembrete
+      const { error: calendarError } = await supabase
+        .from('calendar_events')
+        .insert({
+          title: `🔔 ${formData.title || 'Lembrete'}`,
+          description: formData.message,
+          start_date: reminderDateTime.toISOString(),
+          end_date: set(reminderDateTime, { minutes: parseInt(reminderDateTime.getMinutes()) + 15 }).toISOString(),
+          created_by: user.id,
+          event_type: 'reminder',
+          all_day: false,
+        });
+
+      if (calendarError) console.error('Erro ao criar evento no calendário:', calendarError);
+
       // Buscar nomes dos usuários mencionados
       const mentionedNames = profiles
         .filter((p) => usersToNotify.includes(p.id))

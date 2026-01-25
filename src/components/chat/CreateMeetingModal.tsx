@@ -106,7 +106,7 @@ export default function CreateMeetingModal({
 
       // Criar evento/reunião (salvamos como um evento no calendário)
       const { data: event, error: eventError } = await supabase
-        .from('events')
+        .from('calendar_events')
         .insert({
           title: formData.title,
           description: formData.description || null,
