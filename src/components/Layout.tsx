@@ -25,6 +25,7 @@ import {
   Clock,
 } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
+import PushNotificationPrompt from '@/components/PushNotificationPrompt';
 
 interface LayoutProps {
   children: ReactNode;
@@ -205,6 +206,9 @@ export default function Layout({ children }: LayoutProps) {
           })}
         </div>
       </nav>
+
+      {/* Push Notification Prompt */}
+      <PushNotificationPrompt />
     </div>
   );
 }
