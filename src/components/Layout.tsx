@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTaskReminders } from '@/hooks/useTaskReminders';
@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Users,
@@ -24,12 +26,22 @@ import {
   MessageCircle,
   Clock,
   Search,
+  X,
 } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
 import PushNotificationPrompt from '@/components/PushNotificationPrompt';
+import { supabase } from '@/lib/supabase';
 
 interface LayoutProps {
   children: ReactNode;
+}
+
+interface SearchResult {
+  id: string;
+  type: 'client' | 'task' | 'deal' | 'event' | 'employee';
+  title: string;
+  subtitle?: string;
+  path: string;
 }
 
 export default function Layout({ children }: LayoutProps) {
@@ -40,9 +52,153 @@ export default function Layout({ children }: LayoutProps) {
   // Ativar sistema de lembretes de tarefas
   useTaskReminders();
 
+  // Estado da busca
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const performSearch = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    const results: SearchResult[] = [];
+
+    try {
+      // Buscar clientes
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, name, email')
+        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(5);
+
+      clients?.forEach(client => {
+        results.push({
+          id: client.id,
+          type: 'client',
+          title: client.name,
+          subtitle: client.email,
+          path: `/clients?client=${client.id}`,
+        });
+      });
+
+      // Buscar tarefas
+      const { data: tasks } = await supabase
+        .from('tasks')
+        .select('id, title, description')
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(5);
+
+      tasks?.forEach(task => {
+        results.push({
+          id: task.id,
+          type: 'task',
+          title: task.title,
+          subtitle: task.description?.substring(0, 50),
+          path: `/tasks?open=${task.id}`,
+        });
+      });
+
+      // Buscar deals
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id, title, description')
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(5);
+
+      deals?.forEach(deal => {
+        results.push({
+          id: deal.id,
+          type: 'deal',
+          title: deal.title,
+          subtitle: deal.description?.substring(0, 50),
+          path: `/tasks?deal=${deal.id}`,
+        });
+      });
+
+      // Buscar eventos
+      const { data: events } = await supabase
+        .from('calendar_events')
+        .select('id, title, description')
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(5);
+
+      events?.forEach(event => {
+        results.push({
+          id: event.id,
+          type: 'event',
+          title: event.title,
+          subtitle: event.description?.substring(0, 50),
+          path: `/calendar`,
+        });
+      });
+
+      // Buscar funcionários
+      const { data: employees } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(5);
+
+      employees?.forEach(emp => {
+        results.push({
+          id: emp.id,
+          type: 'employee',
+          title: emp.full_name || 'Sem nome',
+          subtitle: emp.email,
+          path: `/employees`,
+        });
+      });
+
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Erro na busca:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    performSearch(value);
+  };
+
+  const handleResultClick = (path: string) => {
+    navigate(path);
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const getResultIcon = (type: string) => {
+    switch (type) {
+      case 'client': return <Briefcase className="h-4 w-4" />;
+      case 'task': return <CheckSquare className="h-4 w-4" />;
+      case 'deal': return <Briefcase className="h-4 w-4 text-green-600" />;
+      case 'event': return <Calendar className="h-4 w-4" />;
+      case 'employee': return <Users className="h-4 w-4" />;
+      default: return <Search className="h-4 w-4" />;
+    }
+  };
+
+  const getResultTypeLabel = (type: string) => {
+    switch (type) {
+      case 'client': return 'Cliente';
+      case 'task': return 'Tarefa';
+      case 'deal': return 'Oportunidade';
+      case 'event': return 'Evento';
+      case 'employee': return 'Funcionário';
+      default: return '';
+    }
   };
 
   const baseNavigation = [
@@ -88,21 +244,95 @@ export default function Layout({ children }: LayoutProps) {
       {/* Top Header - Desktop only */}
       <header className="hidden lg:block fixed top-0 left-64 right-0 z-40 h-16 bg-white border-b border-gray-200 shadow-sm">
         <div className="h-full px-6 flex items-center justify-between gap-4">
-          {/* Left: Search Icon */}
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Search className="h-5 w-5 text-gray-600" />
-          </button>
+          {/* Left: Search */}
+          <div className="flex-1 max-w-md">
+            {!isSearchOpen ? (
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Search className="h-5 w-5 text-gray-600" />
+              </button>
+            ) : (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  placeholder="Buscar clientes, tarefas, oportunidades..."
+                  className="pl-10 pr-10"
+                  autoFocus
+                />
+                <button
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  <X className="h-4 w-4 text-gray-400" />
+                </button>
+
+                {/* Dropdown de resultados */}
+                {(searchQuery.length >= 2 && (searchResults.length > 0 || isSearching)) && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
+                    {isSearching ? (
+                      <div className="p-4 text-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2db4af] mx-auto"></div>
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        Nenhum resultado encontrado
+                      </div>
+                    ) : (
+                      <div className="py-2">
+                        {searchResults.map((result) => (
+                          <button
+                            key={`${result.type}-${result.id}`}
+                            onClick={() => handleResultClick(result.path)}
+                            className="w-full px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-3 text-left"
+                          >
+                            <div className="p-2 bg-gray-100 rounded-lg mt-0.5">
+                              {getResultIcon(result.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-sm text-gray-900 truncate">
+                                  {result.title}
+                                </p>
+                                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full flex-shrink-0">
+                                  {getResultTypeLabel(result.type)}
+                                </span>
+                              </div>
+                              {result.subtitle && (
+                                <p className="text-xs text-gray-500 truncate mt-0.5">
+                                  {result.subtitle}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Center: Logo */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <Link to="/dashboard" className="flex items-center">
-              <img
-                src="/logo-sidebar.png"
-                alt="T3ntaculos"
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
-          </div>
+          {!isSearchOpen && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <Link to="/dashboard" className="flex items-center">
+                <img
+                  src="/logo-sidebar.png"
+                  alt="T3ntaculos"
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+            </div>
+          )}
 
           {/* Right: Notifications + Avatar */}
           <div className="flex items-center gap-3">
@@ -148,19 +378,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Sidebar - Desktop only */}
       <aside className="hidden lg:block fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200">
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-center px-6 border-b border-gray-200">
-          <Link to="/dashboard" className="flex items-center">
-            <img
-              src="/logo-sidebar.png"
-              alt="T3ntaculos"
-              className="h-12 w-auto object-contain"
-            />
-          </Link>
-        </div>
-
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto" style={{ height: 'calc(100vh - 4rem)' }}>
+        <nav className="px-4 py-6 space-y-1 overflow-y-auto h-full">
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
