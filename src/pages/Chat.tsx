@@ -334,25 +334,33 @@ export default function Chat() {
     }
   }, [selectedConversation, user?.id]);
 
-  // Auto-scroll: apenas quando primeira carga ou quando EU envio mensagem
-  useEffect(() => {
-    // Apenas scroll automático se:
-    // 1. Tenho optimistic messages (estou enviando)
-    // 2. Ou lista de mensagens estava vazia antes (primeira carga)
-    const isFirstLoad = messages.length > 0 && !previousMessagesLengthRef.current;
-    const isSendingMessage = optimisticMessages.length > 0;
+  // Scroll automático inteligente
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
 
-    if (isFirstLoad || isSendingMessage) {
+  useEffect(() => {
+    // Detectar se o usuário está perto do final (dentro de 100px)
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      shouldAutoScrollRef.current = distanceFromBottom < 100;
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Scroll automático apenas se:
+    // 1. Usuário está perto do final (shouldAutoScrollRef.current)
+    // 2. OU está enviando mensagem (optimisticMessages)
+    if (shouldAutoScrollRef.current || optimisticMessages.length > 0) {
       scrollToBottom();
     }
-
-    // Atualizar referência
-    if (messages.length > 0) {
-      previousMessagesLengthRef.current = messages.length;
-    }
   }, [messages, optimisticMessages]);
-
-  const previousMessagesLengthRef = useRef(0);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -367,7 +375,13 @@ export default function Chat() {
   }, [isRecording]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Usar scrollTo com behavior instant para ser mais fluido
+    const container = messagesContainerRef.current;
+    if (container) {
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    }
   };
 
   const fetchProfiles = async () => {
@@ -1453,6 +1467,7 @@ export default function Chat() {
 
             {/* Messages - Scrollable */}
             <div
+              ref={messagesContainerRef}
               className="flex-1 p-4 space-y-2"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d9d9d9' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
