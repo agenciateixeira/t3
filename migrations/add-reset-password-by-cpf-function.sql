@@ -19,7 +19,7 @@ DECLARE
   result JSON;
 BEGIN
   -- Buscar o ID do usuário pelo CPF
-  SELECT id, email INTO user_id_found, user_email_found
+  SELECT u.id, u.email INTO user_id_found, user_email_found
   FROM auth.users u
   INNER JOIN public.profiles p ON u.id = p.id
   WHERE p.cpf = user_cpf

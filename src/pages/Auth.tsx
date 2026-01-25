@@ -251,11 +251,14 @@ export default function Auth() {
 
         if (!employee) {
           // Se não encontrou pelo CPF, usar RPC para buscar perfil pelo email
-          const { data: profileData, error: profileError } = await supabase
+          const { data: profileDataArray, error: profileError } = await supabase
             .rpc('get_profile_by_email', { email_input: emailData });
 
-          console.log('Profile by email (RPC):', profileData);
+          console.log('Profile by email (RPC):', profileDataArray);
           console.log('Profile error:', profileError);
+
+          // RPC retorna array, pegar primeiro elemento
+          const profileData = profileDataArray?.[0];
 
           if (profileError || !profileData) {
             setToastMessage({
