@@ -284,20 +284,32 @@ export default function Chat() {
           const typing = new Set<string>();
           const recording = new Set<string>();
 
-          console.log('Presence state:', state);
+          console.log('=== PRESENCE DEBUG ===');
+          console.log('My user ID:', user?.id);
+          console.log('Full presence state:', JSON.stringify(state, null, 2));
+          console.log('State keys:', Object.keys(state));
 
-          Object.values(state).forEach((presences: any) => {
+          Object.entries(state).forEach(([key, presences]: [string, any]) => {
+            console.log(`Key: ${key}, Presences:`, presences);
             presences.forEach((presence: any) => {
-              console.log('Presence:', presence);
+              console.log('  Individual presence:', presence);
+              console.log('  - user_id:', presence.user_id);
+              console.log('  - typing:', presence.typing);
+              console.log('  - Is me?', presence.user_id === user?.id);
+
               if (presence.user_id !== user?.id) {
-                if (presence.typing) typing.add(presence.user_id);
+                if (presence.typing) {
+                  console.log('  → ADDING TO TYPING USERS:', presence.user_id);
+                  typing.add(presence.user_id);
+                }
                 if (presence.recording) recording.add(presence.user_id);
               }
             });
           });
 
-          console.log('Typing users:', Array.from(typing));
-          console.log('Recording users:', Array.from(recording));
+          console.log('Final typing users:', Array.from(typing));
+          console.log('Final recording users:', Array.from(recording));
+          console.log('======================');
 
           setTypingUsers(typing);
           setRecordingUsers(recording);
