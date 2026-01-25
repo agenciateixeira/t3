@@ -980,10 +980,10 @@ export default function Chat() {
                 {showMobilePlusMenu && (
                   <>
                     <div
-                      className="fixed inset-0 z-40"
+                      className="fixed inset-0 z-[100]"
                       onClick={() => setShowMobilePlusMenu(false)}
                     />
-                    <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div className="fixed right-4 top-20 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[101]">
                       <button
                         onClick={() => {
                           setIsNewConversationOpen(true);
