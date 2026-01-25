@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
 
-// VAPID public key - você vai precisar gerar um par de chaves VAPID
-// Use: npx web-push generate-vapid-keys
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+// VAPID public key gerada automaticamente
+const VAPID_PUBLIC_KEY = 'BBrMkjArSIrZyWfUQ_BRsx6kUjC8PrrZnOD1t2eNzvCVrfkOrZDRbsu03onmNcX5PUJKs7nhJULRTSFAKXktu0Q';
 
 export function usePushNotifications() {
   const { user } = useAuth();
