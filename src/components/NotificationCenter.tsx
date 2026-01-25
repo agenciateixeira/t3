@@ -9,6 +9,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Bell,
   CheckCheck,
   Trash2,
@@ -19,6 +27,7 @@ import {
   UserPlus,
   AlertCircle,
   Settings,
+  ExternalLink,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,6 +40,8 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -174,14 +185,23 @@ export default function NotificationCenter() {
       markAsRead(notification.id);
     }
 
+    // Abrir modal com detalhes
+    setSelectedNotification(notification);
+    setIsDialogOpen(true);
+    setIsOpen(false);
+  };
+
+  const handleGoToReference = () => {
+    if (!selectedNotification) return;
+
     // Navegar para a referência se houver
-    if (notification.reference_id && notification.reference_type) {
-      switch (notification.reference_type) {
+    if (selectedNotification.reference_id && selectedNotification.reference_type) {
+      switch (selectedNotification.reference_type) {
         case 'task':
-          navigate(`/tasks?open=${notification.reference_id}`);
+          navigate(`/tasks?open=${selectedNotification.reference_id}`);
           break;
         case 'deal':
-          navigate(`/tasks?deal=${notification.reference_id}`);
+          navigate(`/tasks?deal=${selectedNotification.reference_id}`);
           break;
         case 'event':
           navigate('/calendar');
@@ -189,7 +209,7 @@ export default function NotificationCenter() {
       }
     }
 
-    setIsOpen(false);
+    setIsDialogOpen(false);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -231,6 +251,7 @@ export default function NotificationCenter() {
   };
 
   return (
+    <>
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button
@@ -336,5 +357,76 @@ export default function NotificationCenter() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+
+      {/* Modal de Detalhes da Notificação */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedNotification && (
+                <>
+                  <div className={`p-2 rounded-full ${getNotificationColor(selectedNotification.type)}`}>
+                    {getNotificationIcon(selectedNotification.type)}
+                  </div>
+                  {selectedNotification.title}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedNotification && (
+                <span className="text-xs text-gray-500">
+                  {formatDistanceToNow(new Date(selectedNotification.created_at), {
+                    addSuffix: true,
+                    locale: ptBR,
+                  })}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedNotification && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {selectedNotification.message}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <div className={`px-2 py-1 rounded-full ${getNotificationColor(selectedNotification.type)}`}>
+                  {NOTIFICATION_TYPE_LABELS[selectedNotification.type as keyof typeof NOTIFICATION_TYPE_LABELS] || selectedNotification.type}
+                </div>
+                {selectedNotification.reference_type && (
+                  <div className="px-2 py-1 bg-gray-100 rounded-full">
+                    {selectedNotification.reference_type === 'task' && 'Tarefa'}
+                    {selectedNotification.reference_type === 'deal' && 'Negócio'}
+                    {selectedNotification.reference_type === 'event' && 'Evento'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="flex-1"
+            >
+              Fechar
+            </Button>
+            {selectedNotification?.reference_id && selectedNotification?.reference_type && (
+              <Button
+                onClick={handleGoToReference}
+                className="flex-1 bg-[#2db4af] hover:bg-[#28a39e]"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Ver Detalhes
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
