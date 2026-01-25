@@ -257,28 +257,43 @@ export default function NotificationCenter() {
         <Button
           variant="ghost"
           size="icon"
-          className="relative hover:bg-gray-100"
+          className="relative hover:bg-gray-100 group transition-all duration-200"
         >
-          <Bell className="h-5 w-5" />
+          <Bell className={`h-5 w-5 transition-all duration-300 ${
+            unreadCount > 0
+              ? 'text-[#2db4af] animate-pulse'
+              : 'text-gray-600 group-hover:text-gray-900'
+          }`} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-medium">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
+            <>
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white text-xs flex items-center justify-center font-semibold shadow-lg shadow-red-500/50 animate-bounce">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+              <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 animate-ping opacity-75"></span>
+            </>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold text-sm">Notificações</h3>
+      <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0 shadow-2xl border-2">
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-[#2db4af]/5 to-[#2db4af]/10">
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-[#2db4af]" />
+            <h3 className="font-bold text-base text-gray-900">Notificações</h3>
+            {unreadCount > 0 && (
+              <span className="ml-1 px-2 py-0.5 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-sm">
+                {unreadCount}
+              </span>
+            )}
+          </div>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
               onClick={markAllAsRead}
-              className="text-xs text-[#2db4af] hover:text-[#28a39e] hover:bg-[#2db4af]/10"
+              className="text-xs text-[#2db4af] hover:text-white hover:bg-[#2db4af] transition-all duration-200 font-medium"
             >
               <CheckCheck className="h-3.5 w-3.5 mr-1" />
-              Marcar todas como lidas
+              Todas lidas
             </Button>
           )}
         </div>
@@ -294,48 +309,53 @@ export default function NotificationCenter() {
               <p className="text-sm text-gray-600">Nenhuma notificação</p>
             </div>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-gray-100">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    !notification.is_read ? 'bg-blue-50/30' : ''
+                  className={`p-4 cursor-pointer transition-all duration-200 group relative ${
+                    !notification.is_read
+                      ? 'bg-gradient-to-r from-blue-50/50 to-[#2db4af]/5 hover:from-blue-50 hover:to-[#2db4af]/10 border-l-4 border-[#2db4af]'
+                      : 'hover:bg-gray-50/80'
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
                     <div
-                      className={`p-2 rounded-full h-fit ${getNotificationColor(
+                      className={`p-2.5 rounded-xl h-fit shadow-sm ${getNotificationColor(
                         notification.type
-                      )}`}
+                      )} transition-transform duration-200 group-hover:scale-110`}
                     >
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p
-                          className={`text-sm font-medium ${
+                          className={`text-sm font-semibold leading-tight ${
                             !notification.is_read
                               ? 'text-gray-900'
-                              : 'text-gray-700'
+                              : 'text-gray-600'
                           }`}
                         >
                           {notification.title}
                         </p>
                         {!notification.is_read && (
-                          <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 mt-1"></div>
+                          <div className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#2db4af] to-blue-500 flex-shrink-0 mt-1 animate-pulse shadow-sm shadow-[#2db4af]/50"></div>
                         )}
                       </div>
-                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                      <p className="text-xs text-gray-600 mt-1.5 line-clamp-2 leading-relaxed">
                         {notification.message}
                       </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <p className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(notification.created_at), {
-                            addSuffix: true,
-                            locale: ptBR,
-                          })}
-                        </p>
+                      <div className="flex items-center justify-between mt-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <p className="text-xs text-gray-500 font-medium">
+                            {formatDistanceToNow(new Date(notification.created_at), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })}
+                          </p>
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -343,7 +363,7 @@ export default function NotificationCenter() {
                             e.stopPropagation();
                             deleteNotification(notification.id);
                           }}
-                          className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600"
+                          className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
