@@ -250,32 +250,14 @@ export default function Auth() {
         console.log('Email from RPC:', emailData);
 
         if (!employee) {
-          // Se não encontrou pelo CPF, buscar pelo ID do usuário no auth
-          // Primeiro, buscar o user_id pelo email
-          const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserByEmail(emailData);
+          // Se não encontrou pelo CPF, usar RPC para buscar perfil pelo email
+          const { data: profileData, error: profileError } = await supabase
+            .rpc('get_profile_by_email', { email_input: emailData });
 
-          console.log('Auth user:', authUser);
+          console.log('Profile by email (RPC):', profileData);
+          console.log('Profile error:', profileError);
 
-          if (authError || !authUser) {
-            setToastMessage({
-              variant: 'destructive',
-              title: 'Erro',
-              description: 'Não foi possível encontrar os dados do colaborador. Entre em contato com o administrador.',
-            });
-            setIsLoading(false);
-            return;
-          }
-
-          // Buscar perfil pelo ID do usuário
-          const { data: profileById, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', authUser.id)
-            .maybeSingle();
-
-          console.log('Profile by ID:', profileById);
-
-          if (!profileById) {
+          if (profileError || !profileData) {
             setToastMessage({
               variant: 'destructive',
               title: 'Erro',
@@ -286,20 +268,24 @@ export default function Auth() {
           }
 
           // Atualizar o CPF no perfil se não estiver salvo
-          if (!profileById.cpf) {
-            await supabase
+          if (!profileData.cpf) {
+            const { error: updateError } = await supabase
               .from('profiles')
               .update({ cpf: cleanCPF })
-              .eq('id', authUser.id);
+              .eq('id', profileData.id);
+
+            if (!updateError) {
+              profileData.cpf = cleanCPF;
+            }
           }
 
           // Usar dados do perfil encontrado
-          setEmployeeData({ ...profileById, email: emailData });
+          setEmployeeData({ ...profileData, email: emailData });
           setSignupStep('reset-password');
           setToastMessage({
             variant: 'default',
             title: 'Primeiro acesso',
-            description: `Olá, ${profileById.full_name}! Este CPF já possui cadastro. Defina sua nova senha de acesso.`,
+            description: `Olá, ${profileData.full_name}! Este CPF já possui cadastro. Defina sua nova senha de acesso.`,
           });
           setIsLoading(false);
           return;
