@@ -958,7 +958,7 @@ export default function Chat() {
   return (
     <Layout>
       <div
-        className="h-[calc(100dvh-64px)] flex bg-white lg:fixed lg:inset-0 lg:left-64 lg:h-screen"
+        className="h-[calc(100dvh-64px)] flex bg-white lg:fixed lg:inset-0 lg:left-64 lg:h-screen lg:top-16"
         style={{ overflow: 'hidden' }}
       >
         {/* Conversations List */}
