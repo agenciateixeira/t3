@@ -105,7 +105,6 @@ export default function Layout({ children }: LayoutProps) {
         });
       });
 
-      try {
       // Buscar clientes
       const { data: clients } = await supabase
         .from('clients')
