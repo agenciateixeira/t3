@@ -10,6 +10,7 @@ import SlashCommandMenu from '@/components/chat/SlashCommandMenu';
 import CreateTaskModal from '@/components/chat/CreateTaskModal';
 import CreateDealModal from '@/components/chat/CreateDealModal';
 import CreateReminderModal from '@/components/chat/CreateReminderModal';
+import CreateMeetingModal from '@/components/chat/CreateMeetingModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,6 +136,7 @@ export default function Chat() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isDealModalOpen, setIsDealModalOpen] = useState(false);
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false);
 
   // New group dialog
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
@@ -980,12 +982,7 @@ export default function Chat() {
         setIsReminderModalOpen(true);
         break;
       case 'meeting':
-        // TODO: Implementar modal de reunião
-        toast({
-          variant: 'default',
-          title: 'Em breve',
-          description: 'Funcionalidade de reunião em desenvolvimento',
-        });
+        setIsMeetingModalOpen(true);
         break;
       case 'timer':
         // TODO: Implementar modal de timer
@@ -1988,6 +1985,19 @@ export default function Chat() {
                 variant: 'default',
                 title: 'Lembrete criado!',
                 description: 'O lembrete foi criado e as notificações foram agendadas.',
+              });
+            }}
+          />
+
+          <CreateMeetingModal
+            open={isMeetingModalOpen}
+            onClose={() => setIsMeetingModalOpen(false)}
+            conversation={{ id: selectedConversation.id, type: selectedConversation.type }}
+            onMeetingCreated={() => {
+              toast({
+                variant: 'default',
+                title: 'Reunião agendada!',
+                description: 'A reunião foi agendada e os participantes foram notificados.',
               });
             }}
           />

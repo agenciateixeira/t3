@@ -99,7 +99,7 @@ export default function CreateTaskModal({
           priority: formData.priority,
           status: 'pending',
         })
-        .select('*, assigned:profiles!tasks_assigned_to_fkey(id, full_name)')
+        .select()
         .single();
 
       if (taskError) throw taskError;
@@ -225,7 +225,7 @@ Prioridade: ${formData.priority === 'high' ? '🔴 Alta' : formData.priority ===
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                   <Calendar
                     mode="single"
                     selected={formData.due_date}
