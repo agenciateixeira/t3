@@ -313,9 +313,6 @@ export default function Employees() {
       return;
     }
 
-    // Guardar referência à sessão admin
-    let adminSession: any = null;
-
     try {
       // Validar campos obrigatórios
       if (!employeeFormData.hierarchy) {
@@ -350,91 +347,30 @@ export default function Employees() {
         return;
       }
 
-      // PASSO 1: Salvar sessão atual do admin ANTES de qualquer operação
-      const { data: sessionData } = await supabase.auth.getSession();
-      adminSession = sessionData.session;
-
-      if (!adminSession) {
-        throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
-      }
-
-      // PASSO 2: Criar usuário via Supabase Auth (sem auto-login)
-      const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
-
-      // Usar signInAnonymously temporariamente para evitar auto-login
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: employeeFormData.email,
-        password: tempPassword,
-        options: {
-          emailRedirectTo: undefined,
-          data: {
-            full_name: employeeFormData.full_name,
-            phone: onlyNumbers(employeeFormData.phone),
-            cpf: onlyNumbers(employeeFormData.cpf),
-            hierarchy: employeeFormData.hierarchy,
-            job_title_id: employeeFormData.job_title_id || null,
-            team_id: employeeFormData.team_id || null,
-          },
+      // Chamar Edge Function para criar usuário (NÃO faz login automático!)
+      const { data, error } = await supabase.functions.invoke('create-employee', {
+        body: {
+          full_name: employeeFormData.full_name,
+          email: employeeFormData.email,
+          phone: onlyNumbers(employeeFormData.phone),
+          cpf: onlyNumbers(employeeFormData.cpf),
+          hierarchy: employeeFormData.hierarchy,
+          job_title_id: employeeFormData.job_title_id || null,
+          team_id: employeeFormData.team_id || null,
         },
       });
 
-      // IMPORTANTE: Imediatamente após signUp, restaurar sessão do admin
-      if (!authError && adminSession) {
-        await supabase.auth.setSession({
-          access_token: adminSession.access_token,
-          refresh_token: adminSession.refresh_token,
-        });
+      if (error) {
+        throw new Error(error.message || 'Erro ao criar colaborador');
       }
 
-      if (authError) {
-        // Se o erro for "User already registered", dar mensagem mais clara
-        if (authError.message.includes('already registered') || authError.status === 422) {
-          throw new Error(`❌ O e-mail "${employeeFormData.email}" já está cadastrado no sistema.\n\nPor favor, use outro e-mail ou verifique se este colaborador já existe na lista.`);
-        }
-        throw authError;
-      }
-
-      // PASSO 3: Aguardar um momento para garantir que o signUp finalizou
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // PASSO 4: Restaurar sessão do admin IMEDIATAMENTE
-      const { error: restoreError } = await supabase.auth.setSession({
-        access_token: adminSession.access_token,
-        refresh_token: adminSession.refresh_token,
-      });
-
-      if (restoreError) {
-        console.error('Erro ao restaurar sessão admin:', restoreError);
-        throw new Error('Falha ao restaurar sessão. A página será recarregada.');
-      }
-
-      // PASSO 5: Aguardar um pouco para a sessão se estabilizar
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // PASSO 6: Atualizar/Garantir que os dados estão corretos na tabela profiles
-      if (authData && authData.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            email: employeeFormData.email,
-            phone: onlyNumbers(employeeFormData.phone),
-            cpf: onlyNumbers(employeeFormData.cpf),
-            hierarchy: employeeFormData.hierarchy,
-            job_title_id: employeeFormData.job_title_id || null,
-            team_id: employeeFormData.team_id || null,
-            full_name: employeeFormData.full_name,
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) {
-          console.error('Erro ao atualizar perfil:', profileError);
-          // Não lançar erro aqui, apenas logar - o usuário foi criado
-        }
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Erro ao criar colaborador');
       }
 
       toast({
         title: 'Colaborador cadastrado!',
-        description: `Cadastro criado. Envie as credenciais para ${employeeFormData.email}`,
+        description: `✅ ${employeeFormData.full_name} foi cadastrado com sucesso!\n📧 Email: ${employeeFormData.email}\n🔑 Senha temporária: ${data.temp_password}`,
       });
 
       setEmployeeFormData({
@@ -456,24 +392,8 @@ export default function Employees() {
       toast({
         variant: 'destructive',
         title: 'Erro ao cadastrar colaborador',
-        description: error.message,
+        description: error.message || 'Erro desconhecido',
       });
-
-      // Tentar restaurar sessão se temos a referência
-      if (adminSession) {
-        try {
-          await supabase.auth.setSession({
-            access_token: adminSession.access_token,
-            refresh_token: adminSession.refresh_token,
-          });
-        } catch (restoreErr) {
-          console.error('Falha ao restaurar sessão após erro:', restoreErr);
-          // Última tentativa: recarregar página
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-        }
-      }
     } finally {
       setIsSubmitting(false);
     }
