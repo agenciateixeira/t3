@@ -113,6 +113,10 @@ export default function CreateReminderModal({
         message: formData.message,
         reference_type: 'chat_message',
         created_at: reminderDateTime.toISOString(),
+        metadata: {
+          group_id: conversation.type === 'group' ? conversation.id : null,
+          sender_id: user.id,
+        },
       }));
 
       const { error: notificationError } = await supabase

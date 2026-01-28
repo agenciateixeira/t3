@@ -145,6 +145,12 @@ export default function CreateMeetingModal({
           message: `📅 ${formData.title}\n📆 ${format(meetingDateTime, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n🎥 ${formData.meet_link || 'Link será enviado'}`,
           reference_id: event.id,
           reference_type: 'event',
+          metadata: {
+            event_id: event.id,
+            group_id: conversation.type === 'group' ? conversation.id : null,
+            sender_id: user.id,
+            meeting_link: formData.meet_link,
+          },
         }));
 
       const { error: notificationError } = await supabase

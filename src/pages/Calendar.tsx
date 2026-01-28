@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Task, CalendarEvent } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,6 +54,7 @@ interface Client {
 export default function Calendar() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 15)); // 15/01/2026
@@ -95,6 +96,20 @@ export default function Calendar() {
     fetchClients();
     fetchProfiles();
   }, [currentDate, viewMode, selectedDate]);
+
+  // Handle query params to auto-open event dialog
+  useEffect(() => {
+    const eventId = searchParams.get('event');
+    if (eventId && calendarEvents.length > 0 && !isLoading) {
+      const event = calendarEvents.find(e => e.id === eventId);
+      if (event) {
+        setSelectedEvent(event);
+        setIsEventDialogOpen(true);
+        // Remove o parâmetro da URL após abrir
+        navigate('/calendar', { replace: true });
+      }
+    }
+  }, [searchParams, calendarEvents, isLoading, navigate]);
 
   const fetchClients = async () => {
     try {

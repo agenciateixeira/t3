@@ -205,21 +205,30 @@ export default function NotificationCenter() {
           navigate(`/tasks?deal=${selectedNotification.reference_id}`);
           break;
         case 'event':
-          navigate('/calendar');
+          // Navegar para o calendário com o event_id nos params
+          const eventId = selectedNotification.metadata?.event_id || selectedNotification.reference_id;
+          navigate(`/calendar?event=${eventId}`);
           break;
         case 'message':
           // Para mensagens, usar metadata para navegar para a conversa correta
-          const metadata = selectedNotification.metadata;
+          const metadata = selectedNotification.metadata as any;
           if (metadata?.group_id) {
             // Mensagem em grupo - navegar para o grupo
             navigate(`/chat?conversation=${metadata.group_id}`);
           } else if (metadata?.sender_id) {
             // Mensagem direta - navegar para o DM com o remetente
             navigate(`/chat?user=${metadata.sender_id}`);
+          } else if (selectedNotification.reference_id) {
+            // Fallback - tentar usar o reference_id como message_id para encontrar a conversa
+            navigate(`/chat?message=${selectedNotification.reference_id}`);
           } else {
-            // Fallback - apenas abrir o chat
+            // Último fallback - apenas abrir o chat
             navigate('/chat');
           }
+          break;
+        default:
+          // Fallback genérico
+          console.warn('Tipo de referência desconhecido:', selectedNotification.reference_type);
           break;
       }
     }
