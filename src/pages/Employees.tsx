@@ -52,6 +52,12 @@ interface Team {
     full_name: string;
     avatar_url: string | null;
   };
+  managers?: Array<{
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+  }>;
+  manager_count?: number;
   member_count?: number;
 }
 
@@ -86,7 +92,7 @@ const HIERARCHIES = [
 ];
 
 export default function Employees() {
-  const { profile } = useAuth();
+  const { profile, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToastContext();
 
@@ -136,6 +142,9 @@ export default function Employees() {
 
   // Verificação de acesso
   useEffect(() => {
+    // Aguardar o profile carregar antes de verificar permissões
+    if (loading) return;
+
     if (!hasPermission) {
       toast({
         variant: 'destructive',
@@ -149,7 +158,7 @@ export default function Employees() {
     fetchEmployees();
     fetchTeams();
     fetchJobTitles();
-  }, [hasPermission]);
+  }, [hasPermission, loading]);
 
   useEffect(() => {
     fetchTeams();
@@ -188,18 +197,40 @@ export default function Employees() {
   const fetchTeams = async () => {
     try {
       setIsLoading(true);
-      // ✅ Usando VIEW otimizada - reduz de N+1 queries para 1 query
-      const { data, error } = await supabase
-        .from('teams_with_counts')
-        .select(`
-          *,
-          manager:profiles!teams_manager_id_fkey(id, full_name, avatar_url)
-        `)
+
+      // Tentar usar a nova view teams_with_managers (múltiplos gerentes)
+      const { data: newViewData, error: newViewError } = await supabase
+        .from('teams_with_managers')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (!newViewError && newViewData) {
+        // Mapear para o formato esperado
+        const mappedTeams = newViewData.map((team: any) => ({
+          id: team.team_id,
+          name: team.team_name,
+          description: team.description,
+          created_at: team.created_at,
+          updated_at: team.updated_at,
+          manager: team.managers && team.managers.length > 0 ? team.managers[0] : null,
+          managers: team.managers || [],
+          member_count: team.member_count || 0,
+          manager_count: team.manager_count || 0,
+        }));
+        setTeams(mappedTeams);
+      } else {
+        // Fallback para a view antiga se a nova não existir ainda
+        const { data: oldViewData, error: oldViewError } = await supabase
+          .from('teams_with_counts')
+          .select(`
+            *,
+            manager:profiles!teams_manager_id_fkey(id, full_name, avatar_url)
+          `)
+          .order('created_at', { ascending: false });
 
-      setTeams(data || []);
+        if (oldViewError) throw oldViewError;
+        setTeams(oldViewData || []);
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -1105,7 +1136,33 @@ export default function Employees() {
                       )}
 
                       <div className="space-y-3 pt-3 border-t">
-                        {team.manager ? (
+                        {team.managers && team.managers.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-500">
+                              {team.managers.length === 1 ? 'Gerente' : `Gerentes (${team.managers.length})`}
+                            </p>
+                            <div className="space-y-2">
+                              {team.managers.slice(0, 2).map((manager) => (
+                                <div key={manager.id} className="flex items-center gap-2">
+                                  <Avatar className="h-7 w-7">
+                                    <AvatarImage src={manager.avatar_url || undefined} />
+                                    <AvatarFallback className="bg-[#2db4af] text-white text-xs">
+                                      {getInitials(manager.full_name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {manager.full_name}
+                                  </p>
+                                </div>
+                              ))}
+                              {team.managers.length > 2 && (
+                                <p className="text-xs text-gray-500 pl-9">
+                                  + {team.managers.length - 2} {team.managers.length - 2 === 1 ? 'outro' : 'outros'}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : team.manager ? (
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={team.manager.avatar_url || undefined} />
