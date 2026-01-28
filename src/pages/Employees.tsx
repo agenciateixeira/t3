@@ -492,11 +492,19 @@ export default function Employees() {
         throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
       }
 
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('create-employee', {
+      // Usar fetch direto ao invés do SDK que está falhando
+      console.log('🚀 Attempting direct fetch...');
+
+      const functionUrl = `https://hukbilmyblqlomoaiszm.supabase.co/functions/v1/create-employee`;
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1a2JpbG15YmxxbG9tb2Fpc3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzOTM4MzgsImV4cCI6MjA4Mzk2OTgzOH0.dm6A7cymtNHUNGBWeQaTEAstKPhpMsAvBA9NteqhE28',
         },
-        body: {
+        body: JSON.stringify({
           full_name: employeeFormData.full_name,
           email: employeeFormData.email,
           phone: onlyNumbers(employeeFormData.phone),
@@ -504,8 +512,15 @@ export default function Employees() {
           hierarchy: employeeFormData.hierarchy,
           job_title_id: employeeFormData.job_title_id || null,
           team_id: employeeFormData.team_id || null,
-        },
+        }),
       });
+
+      console.log('🚀 Response status:', response.status);
+
+      const functionData = await response.json();
+      console.log('🚀 Response data:', functionData);
+
+      const functionError = !response.ok || !functionData.success ? functionData : null;
 
       if (functionError) {
         console.error('Edge Function error:', functionError);
