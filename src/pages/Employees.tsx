@@ -384,8 +384,18 @@ export default function Employees() {
       // Gerar senha temporária
       const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
 
+      // Pegar token de autenticação atual
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
+      }
+
       // SOLUÇÃO DEFINITIVA: Chamar Edge Function (usa Admin API - NÃO faz login!)
       const { data: functionData, error: functionError } = await supabase.functions.invoke('create-employee', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
           full_name: employeeFormData.full_name,
           email: employeeFormData.email,

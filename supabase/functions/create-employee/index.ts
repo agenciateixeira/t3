@@ -26,13 +26,20 @@ serve(async (req) => {
     )
 
     // Verificar autenticação do usuário que está chamando
-    const authHeader = req.headers.get('Authorization')!
+    const authHeader = req.headers.get('Authorization')
+
+    if (!authHeader) {
+      console.error('No Authorization header provided')
+      throw new Error('Authorization header ausente')
+    }
+
     const token = authHeader.replace('Bearer ', '')
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
 
     if (authError || !user) {
-      throw new Error('Não autorizado')
+      console.error('Auth error:', authError)
+      throw new Error('Token inválido ou expirado')
     }
 
     // Verificar se o usuário é admin
