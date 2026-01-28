@@ -59,6 +59,7 @@ serve(async (req) => {
       email_confirm: true, // Auto-confirmar email
       user_metadata: {
         full_name,
+        must_change_password: true, // Forçar mudança de senha no primeiro acesso
       }
     })
 
@@ -105,10 +106,15 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Erro ao criar colaborador:', error)
+
+    // Retornar erro mais detalhado
+    const errorMessage = error.message || error.msg || JSON.stringify(error)
+
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Erro desconhecido'
+        error: errorMessage,
+        details: error
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
