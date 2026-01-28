@@ -71,12 +71,11 @@ serve(async (req) => {
       throw new Error('Falha ao criar usuário')
     }
 
-    // Atualizar profile com todos os dados
+    // Atualizar profile com todos os dados (profiles NÃO tem coluna email!)
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
         full_name,
-        email,
         phone: phone || null,
         cpf: cpf || null,
         hierarchy,
