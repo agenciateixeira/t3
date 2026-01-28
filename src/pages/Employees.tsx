@@ -101,10 +101,12 @@ export default function Employees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTeamDialogOpen, setIsTeamDialogOpen] = useState(false);
+  const [isEditTeamDialogOpen, setIsEditTeamDialogOpen] = useState(false);
   const [isEmployeeDialogOpen, setIsEmployeeDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -350,6 +352,80 @@ export default function Employees() {
       toast({
         variant: 'destructive',
         title: 'Erro ao cadastrar time',
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditTeam = (team: Team) => {
+    setEditingTeam(team);
+    setTeamFormData({
+      name: team.name,
+      description: team.description || '',
+      manager_ids: team.managers?.map(m => m.id) || [],
+    });
+    setIsEditTeamDialogOpen(true);
+  };
+
+  const handleTeamUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (!editingTeam) return;
+
+      // PASSO 1: Atualizar informações básicas do time
+      const { error: updateError } = await supabase
+        .from('teams')
+        .update({
+          name: teamFormData.name,
+          description: teamFormData.description || null,
+        })
+        .eq('id', editingTeam.id);
+
+      if (updateError) throw updateError;
+
+      // PASSO 2: Remover todos os gerentes antigos
+      const { error: deleteError } = await supabase
+        .from('team_managers')
+        .delete()
+        .eq('team_id', editingTeam.id);
+
+      if (deleteError) throw deleteError;
+
+      // PASSO 3: Adicionar novos gerentes
+      if (teamFormData.manager_ids.length > 0) {
+        const teamManagersData = teamFormData.manager_ids.map(managerId => ({
+          team_id: editingTeam.id,
+          manager_id: managerId,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('team_managers')
+          .insert(teamManagersData);
+
+        if (insertError) throw insertError;
+      }
+
+      toast({
+        title: 'Time atualizado!',
+        description: `Time "${teamFormData.name}" foi atualizado com sucesso.`,
+      });
+
+      setTeamFormData({
+        name: '',
+        description: '',
+        manager_ids: [],
+      });
+      setEditingTeam(null);
+      setIsEditTeamDialogOpen(false);
+      fetchTeams();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar time',
         description: error.message,
       });
     } finally {
@@ -814,6 +890,129 @@ export default function Employees() {
               </DialogContent>
             </Dialog>
 
+            {/* Dialog de Edição de Time */}
+            <Dialog open={isEditTeamDialogOpen} onOpenChange={setIsEditTeamDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Editar Time</DialogTitle>
+                  <DialogDescription>
+                    Atualize as informações do time e gerencie seus gerentes
+                  </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleTeamUpdate} className="space-y-6 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-team-name">Nome do Time *</Label>
+                    <Input
+                      id="edit-team-name"
+                      value={teamFormData.name}
+                      onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
+                      placeholder="Ex: Time de Estratégia, Time de Design"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-team-description">Descrição</Label>
+                    <Textarea
+                      id="edit-team-description"
+                      value={teamFormData.description}
+                      onChange={(e) =>
+                        setTeamFormData({ ...teamFormData, description: e.target.value })
+                      }
+                      placeholder="Descreva brevemente as responsabilidades do time"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-team-managers">Gerentes do Time</Label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Selecione um ou mais gerentes (opcional). Clique no X para remover.
+                    </p>
+                    <div className="space-y-2">
+                      {/* Lista de gerentes selecionados */}
+                      {teamFormData.manager_ids.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
+                          {teamFormData.manager_ids.map(managerId => {
+                            const manager = employees.find(e => e.id === managerId);
+                            return (
+                              <Badge
+                                key={managerId}
+                                variant="secondary"
+                                className="px-3 py-1 cursor-pointer hover:bg-red-100"
+                                onClick={() => {
+                                  setTeamFormData({
+                                    ...teamFormData,
+                                    manager_ids: teamFormData.manager_ids.filter(id => id !== managerId)
+                                  });
+                                }}
+                              >
+                                {manager?.full_name}
+                                <X className="ml-1 h-3 w-3" />
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Select para adicionar gerentes */}
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (!teamFormData.manager_ids.includes(value)) {
+                            setTeamFormData({
+                              ...teamFormData,
+                              manager_ids: [...teamFormData.manager_ids, value]
+                            });
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Adicionar gerente..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees
+                            .filter(e => !teamFormData.manager_ids.includes(e.id))
+                            .map((employee) => (
+                              <SelectItem key={employee.id} value={employee.id}>
+                                {employee.full_name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditTeamDialogOpen(false);
+                        setEditingTeam(null);
+                        setTeamFormData({
+                          name: '',
+                          description: '',
+                          manager_ids: [],
+                        });
+                      }}
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-[#2db4af] hover:bg-[#28a39e]"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
             {/* Cadastrar Colaborador */}
             <Dialog open={isEmployeeDialogOpen} onOpenChange={setIsEmployeeDialogOpen}>
               <DialogTrigger asChild>
@@ -1214,19 +1413,32 @@ export default function Employees() {
                           </div>
                           <span className="text-lg">{team.name}</span>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingTeam(team);
-                            setDeletingEmployee(null);
-                            setTimeout(() => setShowDeleteDialog(true), 50);
-                          }}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditTeam(team);
+                            }}
+                            className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingTeam(team);
+                              setDeletingEmployee(null);
+                              setTimeout(() => setShowDeleteDialog(true), 50);
+                            }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
