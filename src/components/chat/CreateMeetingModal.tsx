@@ -292,6 +292,8 @@ Participantes: ${participantNames}`;
                     onSelect={(date) => date && setFormData({ ...formData, meeting_date: date })}
                     locale={ptBR}
                     initialFocus
+                    defaultMonth={formData.meeting_date}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   />
                 </PopoverContent>
               </Popover>
