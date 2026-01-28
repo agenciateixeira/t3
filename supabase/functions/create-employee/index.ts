@@ -81,6 +81,10 @@ serve(async (req) => {
     })
 
     if (createError) {
+      // Mensagens de erro mais amigáveis
+      if (createError.message.includes('already registered') || createError.message.includes('User already registered')) {
+        throw new Error(`O e-mail "${email}" já está cadastrado no sistema.`)
+      }
       throw createError
     }
 
@@ -104,6 +108,18 @@ serve(async (req) => {
     if (profileError) {
       // Se falhar ao atualizar profile, deletar o usuário criado
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id)
+
+      // Mensagens de erro mais amigáveis
+      if (profileError.code === '23505') {
+        if (profileError.message.includes('profiles_cpf_key')) {
+          throw new Error('Este CPF já está cadastrado no sistema.')
+        }
+        if (profileError.message.includes('profiles_phone_key')) {
+          throw new Error('Este telefone já está cadastrado no sistema.')
+        }
+        throw new Error('Já existe um colaborador com estes dados.')
+      }
+
       throw new Error(`Erro ao criar profile: ${profileError.message}`)
     }
 
