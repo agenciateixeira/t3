@@ -64,8 +64,7 @@ SELECT
       json_build_object(
         'id', p.id,
         'full_name', p.full_name,
-        'avatar_url', p.avatar_url,
-        'email', p.email
+        'avatar_url', p.avatar_url
       )
     ) FILTER (WHERE p.id IS NOT NULL),
     '[]'::json
