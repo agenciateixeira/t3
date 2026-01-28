@@ -122,7 +122,7 @@ export default function Employees() {
   const [teamFormData, setTeamFormData] = useState({
     name: '',
     description: '',
-    manager_id: '',
+    manager_ids: [] as string[], // Array de IDs de gerentes
   });
 
   const [employeeFormData, setEmployeeFormData] = useState({
@@ -300,23 +300,48 @@ export default function Employees() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('teams').insert({
-        name: teamFormData.name,
-        description: teamFormData.description || null,
-        manager_id: teamFormData.manager_id || null,
-      });
+      // PASSO 1: Criar o time (sem manager_id, pois agora usamos team_managers)
+      const { data: newTeam, error: teamError } = await supabase
+        .from('teams')
+        .insert({
+          name: teamFormData.name,
+          description: teamFormData.description || null,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (teamError) throw teamError;
+
+      // PASSO 2: Se há gerentes selecionados, inserir na tabela team_managers
+      if (teamFormData.manager_ids.length > 0) {
+        const teamManagersData = teamFormData.manager_ids.map(managerId => ({
+          team_id: newTeam.id,
+          manager_id: managerId,
+        }));
+
+        const { error: managersError } = await supabase
+          .from('team_managers')
+          .insert(teamManagersData);
+
+        if (managersError) {
+          console.error('Erro ao adicionar gerentes:', managersError);
+          // Não falha se não conseguir adicionar gerentes, apenas avisa
+          toast({
+            title: 'Time criado com ressalvas',
+            description: 'Time criado, mas houve erro ao adicionar alguns gerentes.',
+          });
+        }
+      }
 
       toast({
         title: 'Time cadastrado!',
-        description: 'O time foi criado com sucesso.',
+        description: `Time "${teamFormData.name}" criado com ${teamFormData.manager_ids.length} gerente(s).`,
       });
 
       setTeamFormData({
         name: '',
         description: '',
-        manager_id: '',
+        manager_ids: [],
       });
 
       setIsTeamDialogOpen(false);
@@ -710,24 +735,62 @@ export default function Employees() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="team-manager">Gerente do Time</Label>
-                    <Select
-                      value={teamFormData.manager_id || ''}
-                      onValueChange={(value) =>
-                        setTeamFormData({ ...teamFormData, manager_id: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um gerente (opcional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            {employee.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="team-managers">Gerentes do Time</Label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Selecione um ou mais gerentes (opcional). Clique para adicionar/remover.
+                    </p>
+                    <div className="space-y-2">
+                      {/* Lista de gerentes selecionados */}
+                      {teamFormData.manager_ids.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-gray-50">
+                          {teamFormData.manager_ids.map(managerId => {
+                            const manager = employees.find(e => e.id === managerId);
+                            return (
+                              <Badge
+                                key={managerId}
+                                variant="secondary"
+                                className="px-3 py-1 cursor-pointer hover:bg-red-100"
+                                onClick={() => {
+                                  setTeamFormData({
+                                    ...teamFormData,
+                                    manager_ids: teamFormData.manager_ids.filter(id => id !== managerId)
+                                  });
+                                }}
+                              >
+                                {manager?.full_name}
+                                <X className="ml-1 h-3 w-3" />
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Select para adicionar gerentes */}
+                      <Select
+                        value=""
+                        onValueChange={(value) => {
+                          if (!teamFormData.manager_ids.includes(value)) {
+                            setTeamFormData({
+                              ...teamFormData,
+                              manager_ids: [...teamFormData.manager_ids, value]
+                            });
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Adicionar gerente..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees
+                            .filter(e => !teamFormData.manager_ids.includes(e.id))
+                            .map((employee) => (
+                              <SelectItem key={employee.id} value={employee.id}>
+                                {employee.full_name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="flex gap-3 pt-4">
