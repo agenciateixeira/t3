@@ -145,7 +145,10 @@ export default function Employees() {
     // Aguardar o profile carregar antes de verificar permissões
     if (loading) return;
 
-    if (!hasPermission) {
+    // Verificar permissões diretamente aqui (sem usar hasPermission na dependência)
+    const userHasPermission = profile?.hierarchy === 'admin' || profile?.hierarchy === 'team_manager';
+
+    if (!userHasPermission) {
       toast({
         variant: 'destructive',
         title: 'Acesso negado',
@@ -158,7 +161,7 @@ export default function Employees() {
     fetchEmployees();
     fetchTeams();
     fetchJobTitles();
-  }, [hasPermission, loading]);
+  }, [profile?.hierarchy, loading]);
 
   useEffect(() => {
     fetchTeams();
