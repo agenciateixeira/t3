@@ -378,76 +378,38 @@ export default function Employees() {
         return;
       }
 
-      // PASSO 1: Salvar sessão atual do admin ANTES de qualquer operação
-      const { data: sessionData } = await supabase.auth.getSession();
-      const adminSession = sessionData.session;
-
-      if (!adminSession) {
-        throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
-      }
-
-      // PASSO 2: Criar usuário via Supabase Auth
+      // Gerar senha temporária
       const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: employeeFormData.email,
-        password: tempPassword,
-        options: {
-          emailRedirectTo: undefined,
-          data: {
-            full_name: employeeFormData.full_name,
-            phone: onlyNumbers(employeeFormData.phone),
-            cpf: onlyNumbers(employeeFormData.cpf),
-            hierarchy: employeeFormData.hierarchy,
-            job_title_id: employeeFormData.job_title_id || null,
-            team_id: employeeFormData.team_id || null,
-          },
+      // SOLUÇÃO DEFINITIVA: Chamar Edge Function (usa Admin API - NÃO faz login!)
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('create-employee', {
+        body: {
+          full_name: employeeFormData.full_name,
+          email: employeeFormData.email,
+          phone: onlyNumbers(employeeFormData.phone),
+          cpf: onlyNumbers(employeeFormData.cpf),
+          hierarchy: employeeFormData.hierarchy,
+          job_title_id: employeeFormData.job_title_id || null,
+          team_id: employeeFormData.team_id || null,
         },
       });
 
-      // IMPORTANTE: Imediatamente após signUp, restaurar sessão do admin
-      if (!authError && adminSession) {
-        await supabase.auth.setSession({
-          access_token: adminSession.access_token,
-          refresh_token: adminSession.refresh_token,
-        });
+      if (functionError) {
+        console.error('Edge Function error:', functionError);
+        throw new Error(functionError.message || 'Erro ao criar colaborador');
       }
 
-      if (authError) {
-        if (authError.message.includes('already registered') || authError.status === 422) {
-          throw new Error(`O e-mail "${employeeFormData.email}" já está cadastrado.`);
-        }
-        throw authError;
+      if (!functionData || !functionData.success) {
+        console.error('Edge Function returned error:', functionData);
+        throw new Error(functionData?.error || 'Erro ao criar colaborador');
       }
 
-      // PASSO 3: Aguardar e restaurar sessão
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      await supabase.auth.setSession({
-        access_token: adminSession.access_token,
-        refresh_token: adminSession.refresh_token,
-      });
-
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // PASSO 4: Atualizar profile (SEM campo email!)
-      if (authData && authData.user) {
-        await supabase
-          .from('profiles')
-          .update({
-            phone: onlyNumbers(employeeFormData.phone),
-            cpf: onlyNumbers(employeeFormData.cpf),
-            hierarchy: employeeFormData.hierarchy,
-            job_title_id: employeeFormData.job_title_id || null,
-            team_id: employeeFormData.team_id || null,
-            full_name: employeeFormData.full_name,
-          })
-          .eq('id', authData.user.id);
-      }
+      // Usar senha retornada pela Edge Function
+      const returnedPassword = functionData.temp_password || tempPassword;
 
       toast({
         title: 'Colaborador cadastrado!',
-        description: `Email: ${employeeFormData.email}\nSenha: ${tempPassword}`,
+        description: `Email: ${employeeFormData.email}\nSenha: ${returnedPassword}`,
       });
 
       setEmployeeFormData({
