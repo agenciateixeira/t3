@@ -391,12 +391,26 @@ export default function Employees() {
         },
       });
 
+      // Se Edge Function falhar, logar detalhes
       if (error) {
-        throw new Error(error.message || 'Erro ao criar colaborador');
+        console.error('Edge Function error:', error);
+        console.error('Response data:', data);
+
+        // Tentar extrair mensagem de erro mais específica
+        let errorMessage = 'Erro ao criar colaborador via Edge Function';
+
+        if (data?.error) {
+          errorMessage = data.error;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        throw new Error(errorMessage);
       }
 
       if (!data || !data.success) {
-        throw new Error(data?.error || 'Erro ao criar colaborador');
+        console.error('Edge Function returned error:', data);
+        throw new Error(data?.error || 'Erro desconhecido ao criar colaborador');
       }
 
       toast({
