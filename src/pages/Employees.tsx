@@ -387,11 +387,23 @@ export default function Employees() {
       // Pegar token de autenticação atual
       const { data: { session } } = await supabase.auth.getSession();
 
+      console.log('📍 Session status:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email
+      });
+
       if (!session) {
         throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
       }
 
       // SOLUÇÃO DEFINITIVA: Chamar Edge Function (usa Admin API - NÃO faz login!)
+      console.log('📍 Invoking Edge Function with:', {
+        email: employeeFormData.email,
+        hierarchy: employeeFormData.hierarchy,
+        hasToken: !!session.access_token
+      });
+
       const { data: functionData, error: functionError } = await supabase.functions.invoke('create-employee', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -407,15 +419,20 @@ export default function Employees() {
         },
       });
 
+      console.log('📍 Edge Function response:', { functionData, functionError });
+
       if (functionError) {
-        console.error('Edge Function error:', functionError);
+        console.error('❌ Edge Function error:', functionError);
+        console.error('❌ Error details:', JSON.stringify(functionError, null, 2));
         throw new Error(functionError.message || 'Erro ao criar colaborador');
       }
 
       if (!functionData || !functionData.success) {
-        console.error('Edge Function returned error:', functionData);
+        console.error('❌ Edge Function returned error:', functionData);
         throw new Error(functionData?.error || 'Erro ao criar colaborador');
       }
+
+      console.log('✅ Employee created successfully:', functionData);
 
       // Usar senha retornada pela Edge Function
       const returnedPassword = functionData.temp_password || tempPassword;

@@ -7,12 +7,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('🔵 Edge Function invoked:', req.method)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('🔵 Starting employee creation process...')
     // Criar cliente Supabase Admin (com service_role key)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -43,15 +46,22 @@ serve(async (req) => {
     }
 
     // Verificar se o usuário é admin
-    const { data: profile } = await supabaseAdmin
+    console.log('🔵 Checking admin status for user:', user.id)
+
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('hierarchy')
       .eq('id', user.id)
       .single()
 
+    console.log('🔵 Profile check result:', { profile, profileError })
+
     if (!profile || profile.hierarchy !== 'admin') {
+      console.error('❌ User is not admin:', { profile: profile?.hierarchy })
       throw new Error('Apenas administradores podem criar colaboradores')
     }
+
+    console.log('✅ User is admin, proceeding...')
 
     // Pegar dados do body
     const { full_name, email, phone, cpf, hierarchy, job_title_id, team_id } = await req.json()
