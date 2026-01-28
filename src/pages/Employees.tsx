@@ -378,44 +378,76 @@ export default function Employees() {
         return;
       }
 
-      // Chamar Edge Function para criar usuário (NÃO faz login automático!)
-      const { data, error } = await supabase.functions.invoke('create-employee', {
-        body: {
-          full_name: employeeFormData.full_name,
-          email: employeeFormData.email,
-          phone: onlyNumbers(employeeFormData.phone),
-          cpf: onlyNumbers(employeeFormData.cpf),
-          hierarchy: employeeFormData.hierarchy,
-          job_title_id: employeeFormData.job_title_id || null,
-          team_id: employeeFormData.team_id || null,
+      // PASSO 1: Salvar sessão atual do admin ANTES de qualquer operação
+      const { data: sessionData } = await supabase.auth.getSession();
+      const adminSession = sessionData.session;
+
+      if (!adminSession) {
+        throw new Error('Sessão não encontrada. Por favor, faça login novamente.');
+      }
+
+      // PASSO 2: Criar usuário via Supabase Auth
+      const tempPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: employeeFormData.email,
+        password: tempPassword,
+        options: {
+          emailRedirectTo: undefined,
+          data: {
+            full_name: employeeFormData.full_name,
+            phone: onlyNumbers(employeeFormData.phone),
+            cpf: onlyNumbers(employeeFormData.cpf),
+            hierarchy: employeeFormData.hierarchy,
+            job_title_id: employeeFormData.job_title_id || null,
+            team_id: employeeFormData.team_id || null,
+          },
         },
       });
 
-      // Se Edge Function falhar, logar detalhes
-      if (error) {
-        console.error('Edge Function error:', error);
-        console.error('Response data:', data);
-
-        // Tentar extrair mensagem de erro mais específica
-        let errorMessage = 'Erro ao criar colaborador via Edge Function';
-
-        if (data?.error) {
-          errorMessage = data.error;
-        } else if (error.message) {
-          errorMessage = error.message;
-        }
-
-        throw new Error(errorMessage);
+      // IMPORTANTE: Imediatamente após signUp, restaurar sessão do admin
+      if (!authError && adminSession) {
+        await supabase.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token,
+        });
       }
 
-      if (!data || !data.success) {
-        console.error('Edge Function returned error:', data);
-        throw new Error(data?.error || 'Erro desconhecido ao criar colaborador');
+      if (authError) {
+        if (authError.message.includes('already registered') || authError.status === 422) {
+          throw new Error(`O e-mail "${employeeFormData.email}" já está cadastrado.`);
+        }
+        throw authError;
+      }
+
+      // PASSO 3: Aguardar e restaurar sessão
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      await supabase.auth.setSession({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // PASSO 4: Atualizar profile (SEM campo email!)
+      if (authData && authData.user) {
+        await supabase
+          .from('profiles')
+          .update({
+            phone: onlyNumbers(employeeFormData.phone),
+            cpf: onlyNumbers(employeeFormData.cpf),
+            hierarchy: employeeFormData.hierarchy,
+            job_title_id: employeeFormData.job_title_id || null,
+            team_id: employeeFormData.team_id || null,
+            full_name: employeeFormData.full_name,
+          })
+          .eq('id', authData.user.id);
       }
 
       toast({
         title: 'Colaborador cadastrado!',
-        description: `✅ ${employeeFormData.full_name} foi cadastrado com sucesso!\n📧 Email: ${employeeFormData.email}\n🔑 Senha temporária: ${data.temp_password}`,
+        description: `Email: ${employeeFormData.email}\nSenha: ${tempPassword}`,
       });
 
       setEmployeeFormData({
